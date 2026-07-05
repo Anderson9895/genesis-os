@@ -8,9 +8,34 @@
       font-family: Arial, sans-serif;
       background: #0f172a;
       color: white;
-      padding: 30px;
+      display: flex;
+      min-height: 100vh;
     }
-    h1 { color: #facc15; }
+    .sidebar {
+      width: 240px;
+      background: #020617;
+      padding: 25px;
+      border-right: 1px solid #334155;
+    }
+    .sidebar h2 {
+      color: #facc15;
+    }
+    .nav {
+      margin-top: 30px;
+    }
+    .nav div {
+      padding: 12px;
+      margin-bottom: 10px;
+      background: #1e293b;
+      border-radius: 10px;
+    }
+    .main {
+      flex: 1;
+      padding: 35px;
+    }
+    h1 {
+      color: #facc15;
+    }
     .grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -31,16 +56,33 @@
   </style>
 </head>
 <body>
-  <h1>Genesis OS</h1>
-  <p>Welcome, Anderson. Your AI business command center is alive.</p>
+  <div class="sidebar">
+    <h2>Genesis OS</h2>
+    <p>Command Center</p>
 
-  <div class="grid">
-    <div class="card"><h2>💰 Revenue</h2><div class="big">$0</div><p>Starting line</p></div>
-    <div class="card"><h2>🤖 AI Employees</h2><div class="big">7</div><p>Planned agents</p></div>
-    <div class="card"><h2>🏜 Holy Water Ranch Co.</h2><div class="big">Active</div><p>First business hub</p></div>
-    <div class="card"><h2>📚 Time Traveler</h2><div class="big">Ready</div><p>Stories, books, and brand</p></div>
-    <div class="card"><h2>🚜 Farm</h2><div class="big">Online</div><p>Farm operations module</p></div>
-    <div class="card"><h2>💡 Ideas</h2><div class="big">Growing</div><p>Opportunity center</p></div>
+    <div class="nav">
+      <div>🏠 Dashboard</div>
+      <div>🤖 AI Employees</div>
+      <div>🏜 Holy Water Ranch Co.</div>
+      <div>📚 Time Traveler</div>
+      <div>🚜 Farm</div>
+      <div>💰 Finance</div>
+      <div>💡 Ideas</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <h1>Welcome, Anderson.</h1>
+    <p>Your AI business command center is alive and growing.</p>
+
+    <div class="grid">
+      <div class="card"><h2>💰 Revenue</h2><div class="big">$0</div><p>Starting line</p></div>
+      <div class="card"><h2>🤖 AI Employees</h2><div class="big">7</div><p>Planned agents</p></div>
+      <div class="card"><h2>🏜 Holy Water Ranch Co.</h2><div class="big">Active</div><p>First business hub</p></div>
+      <div class="card"><h2>📚 Time Traveler</h2><div class="big">Ready</div><p>Stories, books, and brand</p></div>
+      <div class="card"><h2>🚜 Farm</h2><div class="big">Online</div><p>Farm operations module</p></div>
+      <div class="card"><h2>💡 Ideas</h2><div class="big">Growing</div><p>Opportunity center</p></div>
+    </div>
   </div>
 </body>
 </html>
