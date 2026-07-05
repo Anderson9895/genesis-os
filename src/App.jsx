@@ -1,7 +1,7 @@
 import './App.css'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
-
+import AIEmployees from './pages/AIEmployees'
 function Placeholder({ title }) {
   return (
     <>
@@ -33,7 +33,7 @@ function App() {
         <main className="main">
           <Routes>
             <Route path="/" element={<Dashboard />} />
-            <Route path="/ai-employees" element={<Placeholder title="AI Employees" />} />
+            <Route path="/ai-employees" element={<AIEmployees />} />
             <Route path="/holy-water" element={<Placeholder title="Holy Water Ranch Co." />} />
             <Route path="/time-traveler" element={<Placeholder title="Time Traveler" />} />
             <Route path="/farm" element={<Placeholder title="Farm Operations" />} />
