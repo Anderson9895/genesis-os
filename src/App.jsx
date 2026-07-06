@@ -1,4 +1,5 @@
 import './App.css'
+import TopBar from './components/TopBar'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import AIEmployees from './pages/AIEmployees'
@@ -29,7 +30,7 @@ function App() {
             <Link to="/ideas">💡 Ideas</Link>
           </nav>
         </aside>
-
+<TopBar />
         <main className="main">
           <Routes>
             <Route path="/" element={<Dashboard />} />
