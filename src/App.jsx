@@ -1,5 +1,5 @@
 import './App.css'
-import TopBar from './TopBar'
+import TopBar from './components/TopBar'
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import Dashboard from './pages/Dashboard'
 import AIEmployees from './pages/AIEmployees'
