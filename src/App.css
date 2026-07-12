@@ -287,3 +287,177 @@ body {
 .delete-task-btn:hover {
   background: rgba(248, 113, 113, 0.12);
 }
+
+.research-card {
+  grid-column: 1 / -1;
+}
+
+.research-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.research-brief-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.research-brief-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+.brief-link {
+  background: none;
+  border: none;
+  color: #facc15;
+  text-align: left;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.muted-text {
+  color: #cbd5e1;
+  margin: 0;
+}
+
+.research-preview {
+  margin-top: 4px;
+}
+
+.research-section {
+  margin-top: 10px;
+}
+
+.research-section h5 {
+  margin-bottom: 6px;
+  color: #facc15;
+}
+
+.research-section p,
+.research-section li {
+  color: #e2e8f0;
+}
+
+.finance-card {
+  grid-column: 1 / -1;
+}
+
+.finance-workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.finance-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.finance-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.finance-form input,
+.finance-form select,
+.finance-filter-row select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #020617;
+  color: white;
+}
+
+.finance-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.finance-stat-card,
+.finance-summary-card {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 12px;
+}
+
+.finance-stat-card span {
+  display: block;
+  color: #cbd5e1;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.finance-stat-card strong {
+  font-size: 20px;
+  color: #facc15;
+}
+
+.finance-summary-card h3,
+.finance-history h3 {
+  margin-top: 0;
+  color: #facc15;
+}
+
+.finance-filter-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.finance-history ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.finance-history li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.finance-transaction-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.income-pill {
+  color: #4ade80;
+  font-weight: bold;
+}
+
+.expense-pill {
+  color: #fda4af;
+  font-weight: bold;
+}
+
+.finance-report-box {
+  margin-top: 4px;
+}
