@@ -37,9 +37,21 @@ function Dashboard() {
       }
 
       try {
+        const { data: userData } = await supabase.auth.getUser()
+        const user = userData?.user
+
+        if (!user) {
+          if (!ignore) {
+            setTasks([])
+            setIsUsingSupabase(false)
+          }
+          return
+        }
+
         const { data, error } = await supabase
           .from('tasks')
           .select('*')
+          .eq('user_id', user.id)
           .order('created_at', { ascending: true })
 
         if (ignore) return
@@ -80,7 +92,16 @@ function Dashboard() {
 
     if (isSupabaseConfigured() && supabase) {
       try {
-        const { error } = await supabase.from('tasks').update({ done: nextDone }).eq('id', id)
+        const { data: userData } = await supabase.auth.getUser()
+        const user = userData?.user
+
+        if (!user) return
+
+        const { error } = await supabase
+          .from('tasks')
+          .update({ done: nextDone })
+          .eq('id', id)
+          .eq('user_id', user.id)
 
         if (!error) {
           replaceTasks(tasks.map((task) => (task.id === id ? { ...task, done: nextDone } : task)))
@@ -99,7 +120,16 @@ function Dashboard() {
   async function deleteTask(id) {
     if (isSupabaseConfigured() && supabase) {
       try {
-        const { error } = await supabase.from('tasks').delete().eq('id', id)
+        const { data: userData } = await supabase.auth.getUser()
+        const user = userData?.user
+
+        if (!user) return
+
+        const { error } = await supabase
+          .from('tasks')
+          .delete()
+          .eq('id', id)
+          .eq('user_id', user.id)
 
         if (!error) {
           replaceTasks(tasks.filter((task) => task.id !== id))
@@ -124,9 +154,14 @@ function Dashboard() {
 
     if (isSupabaseConfigured() && supabase) {
       try {
+        const { data: userData } = await supabase.auth.getUser()
+        const user = userData?.user
+
+        if (!user) return
+
         const { data, error } = await supabase
           .from('tasks')
-          .insert({ text: cleanTask, done: false })
+          .insert({ text: cleanTask, done: false, user_id: user.id })
           .select()
 
         if (!error && data && data[0]) {
