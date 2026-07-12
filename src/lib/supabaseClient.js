@@ -22,8 +22,8 @@ const hasSupabaseConfig = Boolean(supabaseUrl && supabasePublishableKey)
 export const supabase = hasSupabaseConfig
   ? createClient(supabaseUrl, supabasePublishableKey, {
       auth: {
-        persistSession: false,
-        autoRefreshToken: false,
+        persistSession: true,
+        autoRefreshToken: true,
       },
     })
   : null
