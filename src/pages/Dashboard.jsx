@@ -3,13 +3,6 @@ import DashboardCard from '../components/DashboardCard'
 import { dashboardCards } from '../data/dashboardData'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 
-const starterTasks = [
-  { id: 1, text: 'Build Genesis OS one feature at a time', done: false },
-  { id: 2, text: 'Review Holy Water Ranch ideas', done: false },
-  { id: 3, text: 'Plan the next Time Traveler story', done: false },
-]
-const TASKS_STORAGE_KEY = 'genesis-os-tasks'
-
 function normalizeTask(task) {
   return {
     id: task.id,
@@ -18,36 +11,8 @@ function normalizeTask(task) {
   }
 }
 
-function readStoredTasks() {
-  if (typeof window === 'undefined') {
-    return starterTasks
-  }
-
-  try {
-    const savedTasks = window.localStorage.getItem(TASKS_STORAGE_KEY)
-    if (!savedTasks) return starterTasks
-
-    const parsedTasks = JSON.parse(savedTasks)
-    return Array.isArray(parsedTasks) ? parsedTasks.map(normalizeTask) : starterTasks
-  } catch {
-    return starterTasks
-  }
-}
-
-function writeStoredTasks(tasks) {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  try {
-    window.localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks.map(normalizeTask)))
-  } catch {
-    // Ignore storage errors and rely on in-memory state.
-  }
-}
-
 function Dashboard() {
-  const [tasks, setTasks] = useState(readStoredTasks)
+  const [tasks, setTasks] = useState([])
   const [newTask, setNewTask] = useState('')
   const [isUsingSupabase, setIsUsingSupabase] = useState(isSupabaseConfigured())
 
@@ -56,10 +21,10 @@ function Dashboard() {
 
     async function loadTasks() {
       if (!isSupabaseConfigured() || !supabase) {
-        const fallbackTasks = readStoredTasks()
-        setTasks(fallbackTasks)
-        writeStoredTasks(fallbackTasks)
-        setIsUsingSupabase(false)
+        if (!ignore) {
+          setTasks([])
+          setIsUsingSupabase(false)
+        }
         return
       }
 
@@ -71,10 +36,8 @@ function Dashboard() {
 
         if (ignore) return
 
-        if (!error && data) {
-          const nextTasks = data.map(normalizeTask)
-          setTasks(nextTasks)
-          writeStoredTasks(nextTasks)
+        if (!error && Array.isArray(data)) {
+          setTasks(data.map(normalizeTask))
           setIsUsingSupabase(true)
           return
         }
@@ -83,10 +46,8 @@ function Dashboard() {
       } catch (error) {
         if (ignore) return
 
-        console.warn('Falling back to local storage for Today\'s Mission tasks.', error)
-        const fallbackTasks = readStoredTasks()
-        setTasks(fallbackTasks)
-        writeStoredTasks(fallbackTasks)
+        console.error('Unable to load tasks from Supabase.', error)
+        setTasks([])
         setIsUsingSupabase(false)
       }
     }
@@ -98,13 +59,8 @@ function Dashboard() {
     }
   }, [])
 
-  useEffect(() => {
-    writeStoredTasks(tasks)
-  }, [tasks])
-
   function replaceTasks(nextTasks) {
     setTasks(nextTasks)
-    writeStoredTasks(nextTasks)
   }
 
   async function toggleTask(id) {
@@ -125,7 +81,7 @@ function Dashboard() {
 
         throw error
       } catch (error) {
-        console.warn('Supabase task update failed; using local storage instead.', error)
+        console.error('Supabase task update failed.', error)
       }
     }
 
@@ -144,7 +100,7 @@ function Dashboard() {
 
         throw error
       } catch (error) {
-        console.warn('Supabase task deletion failed; using local storage instead.', error)
+        console.error('Supabase task deletion failed.', error)
       }
     }
 
@@ -179,17 +135,10 @@ function Dashboard() {
 
         throw error ?? new Error('Unable to save task to Supabase')
       } catch (error) {
-        console.warn('Supabase task creation failed; using local storage instead.', error)
+        console.error('Supabase task creation failed.', error)
       }
     }
 
-    const fallbackTask = {
-      id: Date.now(),
-      text: cleanTask,
-      done: false,
-    }
-
-    replaceTasks([...tasks, fallbackTask])
     setNewTask('')
   }
 
