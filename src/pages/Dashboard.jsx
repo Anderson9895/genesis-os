@@ -203,9 +203,14 @@ function Dashboard() {
       <section className="mission">
         <div className="mission-header">
           <h2>Today&apos;s Mission</h2>
-          <span className="task-counter">
-            {completedCount}/{tasks.length} completed{isUsingSupabase ? ' • Supabase' : ' • Local'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span className={`status-badge ${isUsingSupabase ? 'working' : 'offline'}`}>
+              {isUsingSupabase ? 'Cloud Connected' : 'Local Fallback'}
+            </span>
+            <span className="task-counter">
+              {completedCount}/{tasks.length} completed{isUsingSupabase ? ' • Supabase' : ' • Local'}
+            </span>
+          </div>
         </div>
         <form onSubmit={addTask} className="task-form">
           <input

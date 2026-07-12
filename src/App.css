@@ -95,6 +95,26 @@ body {
   font-size: 14px;
 }
 
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.status-badge.working {
+  background: #166534;
+  color: #dcfce7;
+}
+
+.status-badge.offline {
+  background: #7f1d1d;
+  color: #fee2e2;
+}
+
 .task-form {
   display: flex;
   gap: 10px;
