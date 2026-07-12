@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import DashboardCard from '../components/DashboardCard'
 import { dashboardCards } from '../data/dashboardData'
-
+const [newTask, setNewTask] = useState('')
 function Dashboard() {
   const [tasks, setTasks] = useState([
     { id: 1, text: 'Build Genesis OS one feature at a time', done: false },
@@ -16,7 +16,24 @@ function Dashboard() {
       )
     )
   }
+function addTask(event) {
+  event.preventDefault()
 
+  const cleanTask = newTask.trim()
+
+  if (!cleanTask) return
+
+  setTasks([
+    ...tasks,
+    {
+      id: Date.now(),
+      text: cleanTask,
+      done: false,
+    },
+  ])
+
+  setNewTask('')
+}setNewTask
   return (
     <>
       <h1>Welcome, Anderson.</h1>
@@ -24,7 +41,15 @@ function Dashboard() {
 
       <section className="mission">
         <h2>Today&apos;s Mission</h2>
-
+<form onSubmit={addTask} className="task-form">
+  <input
+    type="text"
+    placeholder="Add a new task"
+    value={newTask}
+    onChange={(event) => setNewTask(event.target.value)}
+  />
+  <button type="submit">Add Task</button>
+</form>
         {tasks.map((task) => (
           <label className="task" key={task.id}>
             <input
