@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import DashboardCard from '../components/DashboardCard'
 import { dashboardCards } from '../data/dashboardData'
+import { initialDashboardSummary } from '../lib/dashboardData'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 
 function normalizeTask(task) {
@@ -15,6 +16,13 @@ function Dashboard() {
   const [tasks, setTasks] = useState([])
   const [newTask, setNewTask] = useState('')
   const [isUsingSupabase, setIsUsingSupabase] = useState(isSupabaseConfigured())
+  const [summary, setSummary] = useState(initialDashboardSummary)
+  const [clock, setClock] = useState(new Date())
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setClock(new Date()), 1000)
+    return () => window.clearInterval(timer)
+  }, [])
 
   useEffect(() => {
     let ignore = false
@@ -143,67 +151,155 @@ function Dashboard() {
   }
 
   const completedCount = tasks.filter((task) => task.done).length
+  const activeTasks = tasks.filter((task) => !task.done).length
 
   return (
     <>
-      <h1>Welcome, Anderson.</h1>
-      <p>Your AI business command center is alive and growing.</p>
-
-      <section className="mission">
-        <div className="mission-header">
-          <h2>Today&apos;s Mission</h2>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span className={`status-badge ${isUsingSupabase ? 'working' : 'offline'}`}>
-              {isUsingSupabase ? 'Cloud Connected' : 'Local Fallback'}
-            </span>
-            <span className="task-counter">
-              {completedCount}/{tasks.length} completed{isUsingSupabase ? ' • Supabase' : ' • Local'}
-            </span>
+      <div className="hero-panel">
+        <div>
+          <p className="eyebrow">CEO Command Center</p>
+          <h1>Welcome, visionary leader.</h1>
+          <p className="hero-copy">Your Genesis OS network is running smoothly with live AI operations, task follow-through, and cloud sync.</p>
+        </div>
+        <div className="hero-side">
+          <div className="clock-card">
+            <span className="clock-label">Local Time</span>
+            <strong>{clock.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</strong>
+            <span>{clock.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}</span>
           </div>
         </div>
-        <form onSubmit={addTask} className="task-form">
-          <input
-            type="text"
-            placeholder="Add a new task"
-            value={newTask}
-            onChange={(event) => setNewTask(event.target.value)}
-          />
-          <button type="submit">Add Task</button>
-        </form>
-        {tasks.map((task) => (
-          <div className="task-item" key={task.id}>
-            <label className="task">
-              <input
-                type="checkbox"
-                checked={task.done}
-                onChange={() => toggleTask(task.id)}
-              />
-              <span className={task.done ? 'task-done' : ''}>
-                {task.text}
+      </div>
+
+      <div className="metrics-grid">
+        <article className="metric-card">
+          <span>Live AI Employees</span>
+          <strong>{summary.aiEmployeeCount}</strong>
+          <small>Active agents online</small>
+        </article>
+        <article className="metric-card">
+          <span>Active Tasks</span>
+          <strong>{activeTasks}</strong>
+          <small>Currently in motion</small>
+        </article>
+        <article className="metric-card">
+          <span>Completed Today</span>
+          <strong>{completedCount}</strong>
+          <small>Mission wins</small>
+        </article>
+        <article className="metric-card">
+          <span>Revenue Today</span>
+          <strong>${summary.revenueToday}</strong>
+          <small>Live revenue pulse</small>
+        </article>
+      </div>
+
+      <section className="mission mission-grid">
+        <div className="mission-column">
+          <div className="mission-header">
+            <h2>Current Mission</h2>
+            <div className="mission-status-row">
+              <span className={`status-badge ${isUsingSupabase ? 'working' : 'offline'}`}>
+                {isUsingSupabase ? 'Cloud Sync' : 'Local Fallback'}
               </span>
-            </label>
-            <button
-              type="button"
-              className="delete-task-btn"
-              onClick={() => deleteTask(task.id)}
-              aria-label={`Delete ${task.text}`}
-            >
-              Delete
-            </button>
+              <span className="task-counter">
+                {completedCount}/{tasks.length} completed{isUsingSupabase ? ' • Supabase' : ' • Local'}
+              </span>
+            </div>
           </div>
-        ))}
+          <p className="mission-copy">{summary.currentMission}</p>
+
+          <form onSubmit={addTask} className="task-form">
+            <input
+              type="text"
+              placeholder="Add a new task"
+              value={newTask}
+              onChange={(event) => setNewTask(event.target.value)}
+            />
+            <button type="submit">Add Task</button>
+          </form>
+
+          {tasks.map((task) => (
+            <div className="task-item" key={task.id}>
+              <label className="task">
+                <input
+                  type="checkbox"
+                  checked={task.done}
+                  onChange={() => toggleTask(task.id)}
+                />
+                <span className={task.done ? 'task-done' : ''}>
+                  {task.text}
+                </span>
+              </label>
+              <button
+                type="button"
+                className="delete-task-btn"
+                onClick={() => deleteTask(task.id)}
+                aria-label={`Delete ${task.text}`}
+              >
+                Delete
+              </button>
+            </div>
+          ))}
+        </div>
+
+        <div className="mission-column secondary-stack">
+          <div className="panel-card">
+            <div className="panel-card-header">
+              <h3>Notifications</h3>
+              <span className="panel-pill">Live</span>
+            </div>
+            <ul className="panel-list">
+              {summary.notifications.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
+
+          <div className="panel-card">
+            <div className="panel-card-header">
+              <h3>Recent Activity</h3>
+              <span className="panel-pill">Updated</span>
+            </div>
+            <ul className="panel-list">
+              {summary.recentActivity.map((item) => <li key={item}>{item}</li>)}
+            </ul>
+          </div>
+        </div>
       </section>
 
-      <div className="grid">
-        {dashboardCards.map((card) => (
-          <DashboardCard
-            key={card.title}
-            icon={card.icon}
-            title={card.title}
-            value={card.value}
-            note={card.note}
-          />
-        ))}
+      <div className="dashboard-lower-grid">
+        <section className="panel-card wide-card">
+          <div className="panel-card-header">
+            <h3>System Health</h3>
+            <span className="panel-pill">{summary.systemHealth}</span>
+          </div>
+          <div className="status-grid">
+            <div>
+              <span className="status-label">Cloud Sync</span>
+              <strong>{summary.cloudSync}</strong>
+            </div>
+            <div>
+              <span className="status-label">Weather</span>
+              <strong>{summary.weather}</strong>
+            </div>
+          </div>
+        </section>
+
+        <section className="panel-card wide-card">
+          <div className="panel-card-header">
+            <h3>Executive Snapshot</h3>
+            <span className="panel-pill">Overview</span>
+          </div>
+          <div className="grid">
+            {dashboardCards.map((card) => (
+              <DashboardCard
+                key={card.title}
+                icon={card.icon}
+                title={card.title}
+                value={card.value}
+                note={card.note}
+              />
+            ))}
+          </div>
+        </section>
       </div>
     </>
   )
