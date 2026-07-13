@@ -9,15 +9,49 @@ function normalizeTask(task) {
     id: task.id,
     text: task.text,
     done: Boolean(task.done),
+    created_at: task.created_at || null,
+    due_date: task.due_date || null,
   }
+}
+
+function isSameDay(firstDate, secondDate) {
+  return firstDate.getFullYear() === secondDate.getFullYear()
+    && firstDate.getMonth() === secondDate.getMonth()
+    && firstDate.getDate() === secondDate.getDate()
+}
+
+function parseSafeDate(value) {
+  if (!value) return null
+
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
+function isEquipmentServiceDue(record, now) {
+  const status = String(record.status || '').toLowerCase()
+
+  if (status === 'maintenance due' || status === 'out of service' || status === 'in repair') {
+    return true
+  }
+
+  const nextServiceDate = parseSafeDate(record.next_service_date)
+
+  if (!nextServiceDate) return false
+
+  return nextServiceDate <= now
 }
 
 function Dashboard() {
   const [tasks, setTasks] = useState([])
+  const [livestockRecords, setLivestockRecords] = useState([])
+  const [equipmentRecords, setEquipmentRecords] = useState([])
   const [newTask, setNewTask] = useState('')
   const [isUsingSupabase, setIsUsingSupabase] = useState(isSupabaseConfigured())
   const [summary, setSummary] = useState(initialDashboardSummary)
   const [clock, setClock] = useState(new Date())
+  const [ranchBriefing, setRanchBriefing] = useState('Gathering ranch intelligence...')
+  const [ranchNotes, setRanchNotes] = useState([])
+  const [askPrompt, setAskPrompt] = useState('')
 
   useEffect(() => {
     const timer = window.setInterval(() => setClock(new Date()), 1000)
@@ -43,31 +77,49 @@ function Dashboard() {
         if (!user) {
           if (!ignore) {
             setTasks([])
+            setLivestockRecords([])
+            setEquipmentRecords([])
             setIsUsingSupabase(false)
           }
           return
         }
 
-        const { data, error } = await supabase
-          .from('tasks')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: true })
+        const [tasksResult, livestockResult, equipmentResult] = await Promise.all([
+          supabase
+            .from('tasks')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: true }),
+          supabase
+            .from('livestock_records')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false }),
+          supabase
+            .from('equipment_records')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false }),
+        ])
 
         if (ignore) return
 
-        if (!error && Array.isArray(data)) {
-          setTasks(data.map(normalizeTask))
+        if (!tasksResult.error && !livestockResult.error && !equipmentResult.error) {
+          setTasks(Array.isArray(tasksResult.data) ? tasksResult.data.map(normalizeTask) : [])
+          setLivestockRecords(Array.isArray(livestockResult.data) ? livestockResult.data : [])
+          setEquipmentRecords(Array.isArray(equipmentResult.data) ? equipmentResult.data : [])
           setIsUsingSupabase(true)
           return
         }
 
-        throw error ?? new Error('Unable to load tasks from Supabase')
+        throw tasksResult.error || livestockResult.error || equipmentResult.error || new Error('Unable to load ranch data from Supabase')
       } catch (error) {
         if (ignore) return
 
         console.error('Unable to load tasks from Supabase.', error)
         setTasks([])
+        setLivestockRecords([])
+        setEquipmentRecords([])
         setIsUsingSupabase(false)
       }
     }
@@ -78,6 +130,63 @@ function Dashboard() {
       ignore = true
     }
   }, [])
+
+  useEffect(() => {
+    const now = new Date()
+    const serviceDueCount = equipmentRecords.filter((record) => isEquipmentServiceDue(record, now)).length
+    const animalsNeedingAttention = livestockRecords.filter((record) => {
+      const status = String(record.status || '').toLowerCase()
+      return status === 'medical' || status === 'quarantine'
+    }).length
+    const tasksDueTodayCount = tasks.filter((task) => {
+      if (task.done) return false
+
+      const dueDate = parseSafeDate(task.due_date)
+      if (dueDate) {
+        return isSameDay(dueDate, now)
+      }
+
+      const createdDate = parseSafeDate(task.created_at)
+      return createdDate ? isSameDay(createdDate, now) : false
+    }).length
+
+    const upcomingMaintenance = equipmentRecords
+      .map((record) => ({
+        name: record.name || 'Unnamed equipment',
+        next_service_date: record.next_service_date,
+      }))
+      .filter((record) => parseSafeDate(record.next_service_date))
+      .sort((left, right) => new Date(left.next_service_date).getTime() - new Date(right.next_service_date).getTime())
+      .slice(0, 3)
+
+    const notes = []
+
+    if (upcomingMaintenance.length > 0) {
+      notes.push(`Upcoming maintenance: ${upcomingMaintenance.map((item) => item.name).join(', ')}`)
+    }
+
+    const flaggedAnimal = livestockRecords.find((record) => {
+      const status = String(record.status || '').toLowerCase()
+      return status === 'medical' || status === 'quarantine'
+    })
+
+    if (flaggedAnimal) {
+      notes.push(`Animal attention: ${flaggedAnimal.name || flaggedAnimal.tag_number || 'Unlabeled record'} is marked ${flaggedAnimal.status}.`)
+    }
+
+    if (tasksDueTodayCount > 0) {
+      notes.push(`You have ${tasksDueTodayCount} open task${tasksDueTodayCount === 1 ? '' : 's'} due today.`)
+    }
+
+    if (notes.length === 0) {
+      notes.push('All ranch systems are stable. Keep logging inspections and service updates.')
+    }
+
+    setRanchNotes(notes)
+    setRanchBriefing(
+      `Daily briefing: ${animalsNeedingAttention} animal${animalsNeedingAttention === 1 ? '' : 's'} need attention, ${serviceDueCount} equipment item${serviceDueCount === 1 ? '' : 's'} need service, and ${tasksDueTodayCount} task${tasksDueTodayCount === 1 ? '' : 's'} are due today.`
+    )
+  }, [equipmentRecords, livestockRecords, tasks])
 
   function replaceTasks(nextTasks) {
     setTasks(nextTasks)
@@ -187,6 +296,31 @@ function Dashboard() {
 
   const completedCount = tasks.filter((task) => task.done).length
   const activeTasks = tasks.filter((task) => !task.done).length
+  const now = new Date()
+  const animalsNeedingAttention = livestockRecords.filter((record) => {
+    const status = String(record.status || '').toLowerCase()
+    return status === 'medical' || status === 'quarantine'
+  }).length
+  const equipmentNeedingService = equipmentRecords.filter((record) => isEquipmentServiceDue(record, now)).length
+  const tasksDueToday = tasks.filter((task) => {
+    if (task.done) return false
+
+    const dueDate = parseSafeDate(task.due_date)
+    if (dueDate) return isSameDay(dueDate, now)
+
+    const createdDate = parseSafeDate(task.created_at)
+    return createdDate ? isSameDay(createdDate, now) : false
+  }).length
+
+  const upcomingMaintenance = equipmentRecords
+    .filter((record) => parseSafeDate(record.next_service_date))
+    .sort((left, right) => new Date(left.next_service_date).getTime() - new Date(right.next_service_date).getTime())
+    .slice(0, 4)
+
+  function handleAskRanchAi(event) {
+    event.preventDefault()
+    setAskPrompt('')
+  }
 
   return (
     <>
@@ -297,6 +431,78 @@ function Dashboard() {
               {summary.recentActivity.map((item) => <li key={item}>{item}</li>)}
             </ul>
           </div>
+        </div>
+      </section>
+
+      <section className="panel-card ranch-ai-manager">
+        <div className="panel-card-header">
+          <h3>AI Ranch Manager</h3>
+          <span className="panel-pill">Daily Briefing</span>
+        </div>
+        <p className="ranch-ai-briefing">{ranchBriefing}</p>
+
+        <div className="ranch-ai-cards">
+          <article className="ranch-ai-card">
+            <span>Animals needing attention</span>
+            <strong>{animalsNeedingAttention}</strong>
+          </article>
+          <article className="ranch-ai-card">
+            <span>Equipment needing service</span>
+            <strong>{equipmentNeedingService}</strong>
+          </article>
+          <article className="ranch-ai-card">
+            <span>Tasks due today</span>
+            <strong>{tasksDueToday}</strong>
+          </article>
+          <article className="ranch-ai-card">
+            <span>Weather</span>
+            <strong>Weather API Placeholder</strong>
+          </article>
+          <article className="ranch-ai-card ranch-ai-card-notes">
+            <span>Notes</span>
+            <ul>
+              {ranchNotes.map((note) => <li key={note}>{note}</li>)}
+            </ul>
+          </article>
+        </div>
+
+        <div className="ranch-ai-layout">
+          <section className="ranch-ai-subpanel">
+            <div className="panel-card-header">
+              <h4>Upcoming Maintenance</h4>
+              <span className="panel-pill">Schedule</span>
+            </div>
+            {upcomingMaintenance.length === 0 ? (
+              <p className="muted-text">No upcoming maintenance dates found.</p>
+            ) : (
+              <ul className="panel-list">
+                {upcomingMaintenance.map((record) => (
+                  <li key={`${record.id}-${record.next_service_date}`}>
+                    {record.name || 'Unnamed equipment'} - {new Date(record.next_service_date).toLocaleDateString()}
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+
+          <section className="ranch-ai-subpanel">
+            <div className="panel-card-header">
+              <h4>Ask Ranch AI</h4>
+              <span className="panel-pill">Future AI</span>
+            </div>
+            <form className="ranch-ai-ask-form" onSubmit={handleAskRanchAi}>
+              <input
+                type="text"
+                placeholder="Ask about herd risk, maintenance priorities, or today's plan"
+                value={askPrompt}
+                onChange={(event) => setAskPrompt(event.target.value)}
+              />
+              <button type="submit" className="primary-action">Queue Prompt</button>
+            </form>
+            <div className="ranch-ai-response">
+              <p>AI response panel is ready. Future responses will appear here after AI integration is enabled.</p>
+            </div>
+          </section>
         </div>
       </section>
 

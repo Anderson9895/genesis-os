@@ -451,6 +451,105 @@ body {
   margin-top: 16px;
 }
 
+.ranch-ai-manager {
+  margin-top: 16px;
+  border-radius: 18px;
+}
+
+.ranch-ai-briefing {
+  margin: 0 0 14px;
+  color: #e2e8f0;
+}
+
+.ranch-ai-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ranch-ai-card {
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.ranch-ai-card span {
+  display: block;
+  color: #cbd5e1;
+  font-size: 12px;
+  margin-bottom: 6px;
+}
+
+.ranch-ai-card strong {
+  color: #facc15;
+  font-size: 20px;
+}
+
+.ranch-ai-card-notes {
+  grid-column: 1 / -1;
+}
+
+.ranch-ai-card-notes ul {
+  margin: 0;
+  padding-left: 18px;
+  color: #e2e8f0;
+}
+
+.ranch-ai-card-notes li + li {
+  margin-top: 6px;
+}
+
+.ranch-ai-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.ranch-ai-subpanel {
+  background: #111827;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.ranch-ai-subpanel h4 {
+  margin: 0;
+  color: #facc15;
+}
+
+.ranch-ai-ask-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ranch-ai-ask-form input {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #020617;
+  color: white;
+}
+
+.ranch-ai-ask-form button {
+  align-self: flex-start;
+}
+
+.ranch-ai-response {
+  margin-top: 10px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px dashed #475569;
+  background: rgba(2, 6, 23, 0.7);
+}
+
+.ranch-ai-response p {
+  margin: 0;
+  color: #cbd5e1;
+}
+
 .wide-card {
   min-height: 100%;
 }
@@ -1041,6 +1140,10 @@ body {
 
 @media (max-width: 1100px) {
   .holy-water-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ranch-ai-layout {
     grid-template-columns: 1fr;
   }
 }
