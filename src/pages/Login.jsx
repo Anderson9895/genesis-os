@@ -16,8 +16,18 @@ function LoginPage() {
     setMessage('')
 
     try {
+      const emailRedirectTo = typeof window !== 'undefined'
+        ? `${window.location.origin}/login`
+        : undefined
+
       const result = isSignUp
-        ? await supabase.auth.signUp({ email, password })
+        ? await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo,
+            },
+          })
         : await supabase.auth.signInWithPassword({ email, password })
 
       if (result.error) {
