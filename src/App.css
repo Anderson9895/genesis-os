@@ -876,9 +876,32 @@ body {
   box-sizing: border-box;
 }
 
+.holy-water-controls {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.holy-water-controls label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.holy-water-controls select {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #020617;
+  color: white;
+}
+
 .holy-water-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
   gap: 8px;
 }
 
@@ -938,6 +961,31 @@ body {
   gap: 8px;
 }
 
+.holy-water-photo {
+  width: 68px;
+  height: 68px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  object-fit: cover;
+  background: #020617;
+}
+
+.holy-water-photo-placeholder {
+  width: 68px;
+  height: 68px;
+  border-radius: 8px;
+  border: 1px dashed #475569;
+  background: #020617;
+  color: #94a3b8;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
 @media (max-width: 1100px) {
   .holy-water-grid {
     grid-template-columns: 1fr;
@@ -954,6 +1002,10 @@ body {
   }
 
   .holy-water-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .holy-water-controls {
     grid-template-columns: 1fr;
   }
 }

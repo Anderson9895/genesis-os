@@ -40,10 +40,14 @@ create table if not exists public.livestock_records (
   weight numeric(10,2),
   status text,
   notes text,
+  photo_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   constraint livestock_records_user_tag_unique unique (user_id, tag_number)
 );
+
+alter table if exists public.livestock_records
+  add column if not exists photo_url text;
 
 alter table public.livestock_records enable row level security;
 

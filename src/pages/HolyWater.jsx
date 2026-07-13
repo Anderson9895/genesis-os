@@ -10,7 +10,14 @@ const emptyForm = {
 	weight: '',
 	status: 'Active',
 	notes: '',
+	photo_url: '',
 }
+
+const statusOptions = ['Active', 'Calf', 'Sold', 'Quarantine', 'Medical', 'Retired']
+const sortOptions = [
+	{ value: 'tag_number', label: 'Tag Number' },
+	{ value: 'name', label: 'Name' },
+]
 
 function formatDateForDisplay(value) {
 	if (!value) return 'Unknown'
@@ -28,10 +35,35 @@ function formatDateForDisplay(value) {
 	})
 }
 
+function isCalf(record) {
+	const statusText = String(record.status || '').toLowerCase()
+
+	if (statusText.includes('calf')) {
+		return true
+	}
+
+	if (!record.birth_date) {
+		return false
+	}
+
+	const birthDate = new Date(record.birth_date)
+
+	if (Number.isNaN(birthDate.getTime())) {
+		return false
+	}
+
+	const ageInMs = Date.now() - birthDate.getTime()
+	const ageInDays = ageInMs / (1000 * 60 * 60 * 24)
+
+	return ageInDays <= 365
+}
+
 function HolyWater() {
 	const [records, setRecords] = useState([])
 	const [form, setForm] = useState(emptyForm)
 	const [searchTerm, setSearchTerm] = useState('')
+	const [statusFilter, setStatusFilter] = useState('All')
+	const [sortBy, setSortBy] = useState('tag_number')
 	const [isLoading, setIsLoading] = useState(true)
 	const [isSaving, setIsSaving] = useState(false)
 	const [isUsingSupabase, setIsUsingSupabase] = useState(isSupabaseConfigured())
@@ -100,22 +132,43 @@ function HolyWater() {
 
 	const filteredRecords = useMemo(() => {
 		const query = searchTerm.trim().toLowerCase()
+		const statusQuery = statusFilter.toLowerCase()
 
-		if (!query) return records
+		let nextRecords = [...records]
 
-		return records.filter((record) => {
-			const fields = [
-				record.tag_number,
-				record.name,
-				record.breed,
-				record.sex,
-				record.status,
-				record.notes,
-			]
+		if (statusFilter !== 'All') {
+			nextRecords = nextRecords.filter((record) => String(record.status || '').toLowerCase() === statusQuery)
+		}
 
-			return fields.some((field) => String(field || '').toLowerCase().includes(query))
+		if (query) {
+			nextRecords = nextRecords.filter((record) => {
+				const fields = [
+					record.tag_number,
+					record.name,
+					record.breed,
+					record.sex,
+					record.status,
+					record.notes,
+				]
+
+				return fields.some((field) => String(field || '').toLowerCase().includes(query))
+			})
+		}
+
+		nextRecords.sort((left, right) => {
+			const leftValue = String(left[sortBy] || '').toLowerCase()
+			const rightValue = String(right[sortBy] || '').toLowerCase()
+
+			return leftValue.localeCompare(rightValue, undefined, { numeric: true, sensitivity: 'base' })
 		})
-	}, [records, searchTerm])
+
+		return nextRecords
+	}, [records, searchTerm, sortBy, statusFilter])
+
+	const totalCattle = records.length
+	const bulls = records.filter((record) => String(record.sex || '').toLowerCase() === 'male').length
+	const cows = records.filter((record) => String(record.sex || '').toLowerCase() === 'female').length
+	const calves = records.filter(isCalf).length
 
 	function resetForm() {
 		setForm(emptyForm)
@@ -138,6 +191,7 @@ function HolyWater() {
 			weight: record.weight != null ? String(record.weight) : '',
 			status: record.status || 'Active',
 			notes: record.notes || '',
+			photo_url: record.photo_url || '',
 		})
 		setMessage('')
 	}
@@ -178,6 +232,7 @@ function HolyWater() {
 				weight: form.weight === '' ? null : Number.parseFloat(form.weight),
 				status: form.status,
 				notes: form.notes.trim() || null,
+				photo_url: form.photo_url.trim() || null,
 			}
 
 			if (payload.weight != null && Number.isNaN(payload.weight)) {
@@ -269,7 +324,7 @@ function HolyWater() {
 					<div className="clock-card">
 						<span className="clock-label">Data Mode</span>
 						<strong>{isUsingSupabase ? 'Supabase' : 'Unavailable'}</strong>
-						<span>{records.length} cattle records</span>
+						<span>{totalCattle} cattle records</span>
 					</div>
 				</div>
 			</div>
@@ -350,12 +405,23 @@ function HolyWater() {
 							<label>
 								Status
 								<select name="status" value={form.status} onChange={handleInputChange}>
-									<option value="Active">Active</option>
-									<option value="Sold">Sold</option>
-									<option value="Quarantine">Quarantine</option>
-									<option value="Medical">Medical</option>
-									<option value="Retired">Retired</option>
+									{statusOptions.map((statusOption) => (
+										<option key={statusOption} value={statusOption}>
+											{statusOption}
+										</option>
+									))}
 								</select>
+							</label>
+
+							<label>
+								Photo URL
+								<input
+									type="url"
+									name="photo_url"
+									value={form.photo_url}
+									onChange={handleInputChange}
+									placeholder="https://..."
+								/>
 							</label>
 
 							<label className="holy-water-notes-field">
@@ -387,7 +453,7 @@ function HolyWater() {
 				<div className="mission-column secondary-stack">
 					<div className="panel-card">
 						<div className="panel-card-header">
-							<h3>Search Records</h3>
+							<h3>Search, Filter, Sort</h3>
 							<span className="panel-pill">Live Filter</span>
 						</div>
 						<input
@@ -397,25 +463,56 @@ function HolyWater() {
 							value={searchTerm}
 							onChange={(event) => setSearchTerm(event.target.value)}
 						/>
+						<div className="holy-water-controls">
+							<label>
+								Status
+								<select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+									<option value="All">All</option>
+									{statusOptions.map((statusOption) => (
+										<option key={statusOption} value={statusOption}>
+											{statusOption}
+										</option>
+									))}
+								</select>
+							</label>
+							<label>
+								Sort By
+								<select value={sortBy} onChange={(event) => setSortBy(event.target.value)}>
+									{sortOptions.map((option) => (
+										<option key={option.value} value={option.value}>
+											{option.label}
+										</option>
+									))}
+								</select>
+							</label>
+						</div>
 					</div>
 
 					<div className="panel-card">
 						<div className="panel-card-header">
-							<h3>Quick Stats</h3>
+							<h3>Herd Breakdown</h3>
 							<span className="panel-pill">Ranch</span>
 						</div>
 						<div className="holy-water-stats">
 							<div>
 								<span>Total</span>
-								<strong>{records.length}</strong>
+								<strong>{totalCattle}</strong>
+							</div>
+							<div>
+								<span>Bulls</span>
+								<strong>{bulls}</strong>
+							</div>
+							<div>
+								<span>Cows</span>
+								<strong>{cows}</strong>
+							</div>
+							<div>
+								<span>Calves</span>
+								<strong>{calves}</strong>
 							</div>
 							<div>
 								<span>Showing</span>
 								<strong>{filteredRecords.length}</strong>
-							</div>
-							<div>
-								<span>Active</span>
-								<strong>{records.filter((record) => record.status === 'Active').length}</strong>
 							</div>
 						</div>
 					</div>
@@ -437,6 +534,7 @@ function HolyWater() {
 						<table className="holy-water-table">
 							<thead>
 								<tr>
+									<th>Photo</th>
 									<th>Tag Number</th>
 									<th>Name</th>
 									<th>Breed</th>
@@ -451,6 +549,17 @@ function HolyWater() {
 							<tbody>
 								{filteredRecords.map((record) => (
 									<tr key={record.id}>
+										<td>
+											{record.photo_url ? (
+												<img
+													className="holy-water-photo"
+													src={record.photo_url}
+													alt={`Photo of ${record.name || 'cattle'}`}
+												/>
+											) : (
+												<div className="holy-water-photo-placeholder">No photo</div>
+											)}
+										</td>
 										<td>{record.tag_number}</td>
 										<td>{record.name}</td>
 										<td>{record.breed || '-'}</td>
