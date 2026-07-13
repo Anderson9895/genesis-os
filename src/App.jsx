@@ -7,6 +7,7 @@ import AIEmployees from './pages/AIEmployees'
 import HolyWater from './pages/HolyWater'
 import HolyWaterEquipment from './pages/HolyWaterEquipment'
 import FieldsPastures from './pages/FieldsPastures'
+import Finance from './pages/Finance'
 import LoginPage from './pages/Login'
 import { supabase } from './lib/supabaseClient'
 
@@ -53,7 +54,7 @@ function AuthenticatedApp({ user }) {
             <Route path="/fields-pastures" element={<FieldsPastures />} />
             <Route path="/time-traveler" element={<Placeholder title="Time Traveler" />} />
             <Route path="/farm" element={<FieldsPastures />} />
-            <Route path="/finance" element={<Placeholder title="Finance" />} />
+            <Route path="/finance" element={<Finance />} />
             <Route path="/ideas" element={<Placeholder title="Ideas" />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

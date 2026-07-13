@@ -1139,6 +1139,126 @@ body {
   background: #020617;
 }
 
+.finance-center-metrics {
+  margin-top: 0;
+}
+
+.finance-center-grid {
+  align-items: start;
+}
+
+.finance-center-form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+}
+
+.finance-center-filters {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+
+.finance-center-filters input,
+.finance-center-filters select,
+.finance-center-form-grid input,
+.finance-center-form-grid select,
+.finance-center-form-grid textarea {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #020617;
+  color: white;
+}
+
+.finance-chart-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.finance-chart-row {
+  display: grid;
+  grid-template-columns: minmax(90px, 1fr) 2fr minmax(100px, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.finance-chart-row span,
+.finance-chart-row strong {
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.finance-bar-track {
+  width: 100%;
+  height: 10px;
+  border-radius: 999px;
+  background: #020617;
+  border: 1px solid #334155;
+  overflow: hidden;
+}
+
+.finance-bar {
+  height: 100%;
+  border-radius: 999px;
+}
+
+.finance-bar.income {
+  background: #4ade80;
+}
+
+.finance-bar.expense {
+  background: #fb7185;
+}
+
+.finance-monthly-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+  gap: 8px;
+  align-items: end;
+}
+
+.finance-monthly-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.finance-monthly-item span,
+.finance-monthly-item small {
+  color: #cbd5e1;
+  font-size: 11px;
+  text-align: center;
+}
+
+.finance-monthly-track {
+  width: 100%;
+  max-width: 26px;
+  height: 90px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 4px;
+}
+
+.finance-monthly-bar {
+  width: 100%;
+  border-radius: 6px;
+}
+
+.finance-monthly-bar.income {
+  background: #4ade80;
+}
+
+.finance-monthly-bar.expense {
+  background: #fb7185;
+}
+
+.finance-center-table {
+  min-width: 1320px;
+}
+
 .holy-water-photo {
   width: 68px;
   height: 68px;
