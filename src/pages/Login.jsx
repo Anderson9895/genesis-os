@@ -96,6 +96,20 @@ function LoginPage() {
           {isSignUp ? 'Already have an account? Sign in' : 'Need an account? Create one'}
         </button>
 
+        {isSignUp ? (
+          <div className="login-help">
+            <strong>Email confirmation help</strong>
+            <p>
+              If your confirm link does not open the app, use the same URL where Genesis OS is running
+              (Codespaces preview URL, not localhost from another device).
+            </p>
+            <p>
+              In Supabase, add allowed redirects for both your Codespaces URL with <code>/login</code>
+              and <code>http://localhost:4173/login</code>.
+            </p>
+          </div>
+        ) : null}
+
         {message ? <p className="login-message">{message}</p> : null}
       </div>
     </div>
