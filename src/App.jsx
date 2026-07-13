@@ -5,6 +5,7 @@ import TopBar from './components/TopBar'
 import Dashboard from './pages/Dashboard'
 import AIEmployees from './pages/AIEmployees'
 import HolyWater from './pages/HolyWater'
+import HolyWaterEquipment from './pages/HolyWaterEquipment'
 import LoginPage from './pages/Login'
 import { supabase } from './lib/supabaseClient'
 
@@ -46,6 +47,7 @@ function AuthenticatedApp({ user }) {
             <Route path="/" element={<Dashboard />} />
             <Route path="/ai-employees" element={<AIEmployees />} />
             <Route path="/holy-water" element={<HolyWater />} />
+            <Route path="/holy-water/equipment" element={<HolyWaterEquipment />} />
             <Route path="/time-traveler" element={<Placeholder title="Time Traveler" />} />
             <Route path="/farm" element={<Placeholder title="Farm Operations" />} />
             <Route path="/finance" element={<Placeholder title="Finance" />} />

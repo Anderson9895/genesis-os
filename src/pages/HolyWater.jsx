@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 
 const emptyForm = {
@@ -319,6 +320,10 @@ function HolyWater() {
 					<p className="hero-copy">
 						Manage cattle records with secure user-level ownership and cloud sync.
 					</p>
+					<div className="holy-water-module-links">
+						<span className="panel-pill">Livestock</span>
+						<Link className="secondary-action" to="/holy-water/equipment">Open Equipment</Link>
+					</div>
 				</div>
 				<div className="hero-side">
 					<div className="clock-card">

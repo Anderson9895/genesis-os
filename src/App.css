@@ -820,6 +820,14 @@ body {
   margin-bottom: 0;
 }
 
+.holy-water-module-links {
+  margin-top: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .holy-water-grid {
   margin-bottom: 0;
 }
@@ -959,6 +967,22 @@ body {
 .holy-water-row-actions {
   display: flex;
   gap: 8px;
+}
+
+.holy-water-equipment-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.holy-water-equipment-table {
+  min-width: 1450px;
+}
+
+.holy-water-row-overdue {
+  background: rgba(127, 29, 29, 0.18);
+}
+
+.holy-water-alert-card {
+  border-color: #7f1d1d;
 }
 
 .holy-water-photo {
