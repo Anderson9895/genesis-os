@@ -1113,6 +1113,32 @@ body {
   border-color: #7f1d1d;
 }
 
+.fields-pastures-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.fields-pastures-table {
+  min-width: 1600px;
+}
+
+.fields-pastures-overstocked {
+  background: rgba(127, 29, 29, 0.16);
+}
+
+.fields-pastures-photo-stack {
+  display: flex;
+  gap: 6px;
+}
+
+.fields-pastures-photo {
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  border: 1px solid #334155;
+  object-fit: cover;
+  background: #020617;
+}
+
 .holy-water-photo {
   width: 68px;
   height: 68px;
