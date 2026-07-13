@@ -8,6 +8,7 @@ import HolyWater from './pages/HolyWater'
 import HolyWaterEquipment from './pages/HolyWaterEquipment'
 import FieldsPastures from './pages/FieldsPastures'
 import Finance from './pages/Finance'
+import IntelligenceCenter from './pages/IntelligenceCenter'
 import LoginPage from './pages/Login'
 import { supabase } from './lib/supabaseClient'
 
@@ -33,6 +34,7 @@ function AuthenticatedApp({ user }) {
 
         <nav>
           <Link to="/">🏠 Dashboard</Link>
+          <Link to="/intelligence-center">🧭 Intelligence Center</Link>
           <Link to="/ai-employees">🤖 AI Employees</Link>
           <Link to="/holy-water">🏜 Holy Water Ranch Co.</Link>
           <Link to="/fields-pastures">🌾 Fields & Pastures</Link>
@@ -48,6 +50,7 @@ function AuthenticatedApp({ user }) {
         <main className="main">
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/intelligence-center" element={<IntelligenceCenter />} />
             <Route path="/ai-employees" element={<AIEmployees />} />
             <Route path="/holy-water" element={<HolyWater />} />
             <Route path="/holy-water/equipment" element={<HolyWaterEquipment />} />

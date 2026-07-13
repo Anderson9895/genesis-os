@@ -1259,6 +1259,32 @@ body {
   min-width: 1320px;
 }
 
+.intelligence-center-page {
+  gap: 14px;
+}
+
+.intelligence-summary {
+  margin-top: 10px;
+  color: #cbd5e1;
+}
+
+.intelligence-timeline {
+  margin-top: 2px;
+}
+
+.intelligence-timeline-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.intelligence-timeline-list small {
+  color: #94a3b8;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
 .holy-water-photo {
   width: 68px;
   height: 68px;
@@ -1309,5 +1335,10 @@ body {
 
   .holy-water-controls {
     grid-template-columns: 1fr;
+  }
+
+  .intelligence-timeline-list li {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }
