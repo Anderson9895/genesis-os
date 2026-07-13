@@ -1285,6 +1285,136 @@ body {
   white-space: nowrap;
 }
 
+.companion-page {
+  gap: 14px;
+}
+
+.companion-grid {
+  align-items: start;
+}
+
+.companion-chat-column,
+.companion-memory-column {
+  min-height: 100%;
+}
+
+.companion-chat-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 460px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.companion-message {
+  border: 1px solid #334155;
+  background: #020617;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.companion-message.user {
+  border-color: #475569;
+}
+
+.companion-message.assistant {
+  border-color: #166534;
+}
+
+.companion-message header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.companion-message strong {
+  color: #facc15;
+}
+
+.companion-message small {
+  color: #94a3b8;
+  font-size: 11px;
+}
+
+.companion-message p {
+  margin: 0;
+  white-space: pre-wrap;
+  color: #e2e8f0;
+}
+
+.companion-chat-form {
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.companion-chat-form textarea,
+.companion-memory-item input,
+.companion-memory-item select,
+.companion-memory-item textarea {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #020617;
+  color: white;
+}
+
+.companion-chat-actions,
+.companion-memory-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.companion-memory-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.companion-memory-item {
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.companion-memory-item header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.companion-memory-item strong {
+  color: #facc15;
+}
+
+.companion-memory-item p {
+  margin: 0;
+  color: #e2e8f0;
+  white-space: pre-wrap;
+}
+
+.companion-memory-item small {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.companion-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e2e8f0;
+}
+
 .holy-water-photo {
   width: 68px;
   height: 68px;
@@ -1340,5 +1470,10 @@ body {
   .intelligence-timeline-list li {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .companion-chat-actions,
+  .companion-memory-actions {
+    flex-direction: column;
   }
 }
