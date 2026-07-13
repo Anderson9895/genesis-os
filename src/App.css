@@ -809,3 +809,151 @@ body {
 .finance-report-box {
   margin-top: 4px;
 }
+
+.holy-water-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.holy-water-hero {
+  margin-bottom: 0;
+}
+
+.holy-water-grid {
+  margin-bottom: 0;
+}
+
+.holy-water-form {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.holy-water-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.holy-water-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #e2e8f0;
+  font-size: 13px;
+}
+
+.holy-water-form input,
+.holy-water-form select,
+.holy-water-form textarea,
+.holy-water-search {
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #475569;
+  background: #020617;
+  color: white;
+}
+
+.holy-water-notes-field {
+  grid-column: 1 / -1;
+}
+
+.holy-water-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.holy-water-message {
+  margin: 6px 0 0;
+  color: #facc15;
+}
+
+.holy-water-search {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.holy-water-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.holy-water-stats div {
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 10px;
+}
+
+.holy-water-stats span {
+  display: block;
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.holy-water-stats strong {
+  color: #facc15;
+  font-size: 22px;
+}
+
+.holy-water-table-wrap {
+  padding: 14px;
+}
+
+.holy-water-table-scroll {
+  overflow-x: auto;
+}
+
+.holy-water-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 980px;
+}
+
+.holy-water-table th,
+.holy-water-table td {
+  border-bottom: 1px solid #334155;
+  padding: 10px;
+  text-align: left;
+  vertical-align: top;
+  color: #e2e8f0;
+}
+
+.holy-water-table th {
+  color: #facc15;
+  font-size: 13px;
+}
+
+.holy-water-notes-cell {
+  max-width: 240px;
+  white-space: pre-wrap;
+}
+
+.holy-water-row-actions {
+  display: flex;
+  gap: 8px;
+}
+
+@media (max-width: 1100px) {
+  .holy-water-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 700px) {
+  .main {
+    padding: 22px;
+  }
+
+  .hero-panel {
+    flex-direction: column;
+  }
+
+  .holy-water-stats {
+    grid-template-columns: 1fr;
+  }
+}
