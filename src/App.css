@@ -1289,6 +1289,29 @@ body {
   gap: 14px;
 }
 
+.companion-mode-indicator {
+  margin: 12px 0 0;
+  font-weight: bold;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  border: 1px solid #475569;
+}
+
+.companion-mode-indicator.local {
+  background: rgba(71, 85, 105, 0.28);
+  color: #e2e8f0;
+}
+
+.companion-mode-indicator.cloud {
+  background: rgba(22, 101, 52, 0.28);
+  border-color: #166534;
+  color: #dcfce7;
+}
+
 .companion-grid {
   align-items: start;
 }
@@ -1415,6 +1438,28 @@ body {
   color: #e2e8f0;
 }
 
+.ai-admin-grid {
+  align-items: start;
+}
+
+.ai-admin-status-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.ai-admin-form-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.ai-pill-local {
+  color: #e2e8f0;
+  background: rgba(71, 85, 105, 0.3);
+}
+
+.ai-pill-cloud {
+  color: #dcfce7;
+  background: rgba(22, 101, 52, 0.3);
+}
+
 .holy-water-photo {
   width: 68px;
   height: 68px;
@@ -1475,5 +1520,9 @@ body {
   .companion-chat-actions,
   .companion-memory-actions {
     flex-direction: column;
+  }
+
+  .ai-admin-status-grid {
+    grid-template-columns: 1fr;
   }
 }

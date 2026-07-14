@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import { callAiApi } from '../lib/aiApiClient'
 
 const memoryCategories = [
   'Preferences',
@@ -122,6 +123,13 @@ function GenesisCompanion() {
     activeAiEmployees: 0,
     overstockedPastures: 0,
   })
+  const [aiRuntime, setAiRuntime] = useState({
+    mode: 'local',
+    provider: 'local-free',
+    model: 'template-v1',
+    cloudActive: false,
+    reason: 'Local Free Mode selected.',
+  })
 
   const recognitionRef = useRef(null)
   const synthesisRef = useRef(null)
@@ -133,6 +141,42 @@ function GenesisCompanion() {
 
   useEffect(() => {
     realtimeAdapterRef.current = createRealtimeVoiceAdapter()
+  }, [])
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadAiRuntime() {
+      try {
+        const payload = await callAiApi('/api/ai/settings')
+        if (ignore) return
+
+        setAiRuntime({
+          mode: payload.mode || 'local',
+          provider: payload.provider || 'local-free',
+          model: payload.model || 'template-v1',
+          cloudActive: payload.mode === 'cloud',
+          reason: payload.cloudConfigured
+            ? 'Cloud AI configuration is available.'
+            : 'Cloud key is not configured. Local Free Mode is active.',
+        })
+      } catch {
+        if (!ignore) {
+          setAiRuntime((current) => ({
+            ...current,
+            mode: 'local',
+            cloudActive: false,
+            reason: 'AI server is unavailable. Local Free Mode is active.',
+          }))
+        }
+      }
+    }
+
+    loadAiRuntime()
+
+    return () => {
+      ignore = true
+    }
   }, [])
 
   useEffect(() => {
@@ -440,33 +484,36 @@ function GenesisCompanion() {
   }
 
   async function getCompanionReply(userMessage) {
-    const endpoint = import.meta.env?.VITE_GENESIS_COMPANION_API_URL
     const memoryCount = memories.length
 
-    if (endpoint) {
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: userMessage,
-            context: contextSnapshot,
-            memoryCount,
-          }),
-        })
+    try {
+      const payload = await callAiApi('/api/ai/chat', {
+        method: 'POST',
+        body: {
+          message: userMessage,
+          context: contextSnapshot,
+          memoryCount,
+        },
+      })
 
-        if (response.ok) {
-          const payload = await response.json()
-          if (payload?.reply) {
-            return String(payload.reply)
-          }
-        }
-      } catch {
-        // Fallback to local template below.
+      return {
+        reply: String(payload.reply || ''),
+        mode: payload.mode || 'local',
+        provider: payload.provider || 'local-free',
+        model: payload.model || 'template-v1',
+        cloudActive: Boolean(payload.cloudActive),
+        reason: payload.reason || '',
+      }
+    } catch {
+      return {
+        reply: createLocalResponse(userMessage, contextSnapshot, memoryCount),
+        mode: 'local',
+        provider: 'local-free',
+        model: 'template-v1',
+        cloudActive: false,
+        reason: 'AI server unavailable. Falling back to Local Free Mode.',
       }
     }
-
-    return createLocalResponse(userMessage, contextSnapshot, memoryCount)
   }
 
   async function sendMessage(rawMessage) {
@@ -499,8 +546,16 @@ function GenesisCompanion() {
         memoryOutcome = error?.message || 'Memory save failed.'
       }
 
-      const reply = await getCompanionReply(text)
-      const finalReply = memoryOutcome ? `${reply}\n\n${memoryOutcome}` : reply
+      const aiReply = await getCompanionReply(text)
+      setAiRuntime({
+        mode: aiReply.mode,
+        provider: aiReply.provider,
+        model: aiReply.model,
+        cloudActive: aiReply.cloudActive,
+        reason: aiReply.reason || (aiReply.cloudActive ? 'Cloud AI response delivered.' : 'Local Free Mode response delivered.'),
+      })
+
+      const finalReply = memoryOutcome ? `${aiReply.reply}\n\n${memoryOutcome}` : aiReply.reply
 
       const optimisticAssistant = {
         id: `local-assistant-${Date.now()}`,
@@ -517,7 +572,7 @@ function GenesisCompanion() {
       }
 
       speakText(finalReply)
-      setMessageNotice('')
+      setMessageNotice(aiReply.reason || '')
     } catch (error) {
       console.error('Failed to send companion message.', error)
       setMessageNotice(error?.message || 'Unable to process your message right now.')
@@ -617,12 +672,16 @@ function GenesisCompanion() {
           <p className="eyebrow">Genesis OS Core</p>
           <h1>Genesis Companion</h1>
           <p className="hero-copy">Voice-enabled workspace with intentional memory capture and secure personal context.</p>
+          <p className={`companion-mode-indicator ${aiRuntime.cloudActive ? 'cloud' : 'local'}`}>
+            {aiRuntime.cloudActive ? 'Cloud AI in use' : 'Local Free Mode'} · {aiRuntime.provider} · {aiRuntime.model}
+          </p>
         </div>
         <div className="hero-side">
           <div className="clock-card">
             <span className="clock-label">Companion State</span>
             <strong>{statusText}</strong>
             <span>{memoryEnabled ? 'Memory Enabled' : 'Memory Disabled'}</span>
+            <span>{aiRuntime.cloudActive ? 'Cloud AI Active' : 'Local Free Mode Active'}</span>
           </div>
         </div>
       </div>
@@ -637,6 +696,7 @@ function GenesisCompanion() {
               <h3>Conversation</h3>
               <span className={`status-badge ${statusClass}`}>{statusText}</span>
             </div>
+            <p className="muted-text">Runtime: {aiRuntime.cloudActive ? 'Cloud AI Mode' : 'Local Free Mode'}</p>
 
             <div className="companion-chat-history">
               {isLoading ? (
