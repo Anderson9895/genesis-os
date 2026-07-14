@@ -694,6 +694,15 @@ body {
 .primary-action {
   background: #facc15;
   color: #111827;
+  border: 1px solid #facc15;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-weight: bold;
+  cursor: pointer;
 }
 
 .secondary-action {
@@ -1483,6 +1492,84 @@ body {
   text-align: center;
   padding: 4px;
   box-sizing: border-box;
+}
+
+.briefing-page {
+  gap: 14px;
+}
+
+.briefing-grid {
+  align-items: start;
+}
+
+.briefing-primary-card {
+  min-height: 100%;
+}
+
+.briefing-sections {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.briefing-section {
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.briefing-section h4 {
+  margin: 0 0 8px;
+  color: #facc15;
+}
+
+.briefing-section p,
+.briefing-section li {
+  color: #e2e8f0;
+}
+
+.briefing-section ol,
+.briefing-section ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.briefing-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.briefing-history-item {
+  background: #020617;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  color: #e2e8f0;
+  text-align: left;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  cursor: pointer;
+}
+
+.briefing-history-item strong {
+  color: #facc15;
+}
+
+.briefing-history-item span {
+  color: #cbd5e1;
+  font-size: 12px;
+}
+
+.briefing-history-item small {
+  color: #94a3b8;
+}
+
+.briefing-history-item.active {
+  border-color: #166534;
 }
 
 @media (max-width: 1100px) {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
 import { callAiApi } from '../lib/aiApiClient'
 
@@ -675,6 +676,9 @@ function GenesisCompanion() {
           <p className={`companion-mode-indicator ${aiRuntime.cloudActive ? 'cloud' : 'local'}`}>
             {aiRuntime.cloudActive ? 'Cloud AI in use' : 'Local Free Mode'} · {aiRuntime.provider} · {aiRuntime.model}
           </p>
+          <div className="holy-water-module-links">
+            <Link className="primary-action" to="/daily-briefing">Read My Briefing</Link>
+          </div>
         </div>
         <div className="hero-side">
           <div className="clock-card">
