@@ -1,3 +1,20 @@
+-- Genesis OS schema bootstrap.
+-- The `tasks` table DDL was previously missing from this migration (it only
+-- had an `alter table ... add column` plus RLS policies). On a fresh Supabase
+-- project the policies referenced a `tasks` table that was never created, so
+-- the migration failed ("relation does not exist"). This `create table if not
+-- exists` is idempotent: on a database where `tasks` already exists it is a
+-- no-op, so existing tables/columns/data are preserved untouched. Columns
+-- match how the app reads/writes tasks (see src/pages/Dashboard.jsx).
+create table if not exists public.tasks (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  text text not null,
+  done boolean not null default false,
+  due_date date,
+  created_at timestamptz not null default now()
+);
+
 alter table if exists public.tasks
   add column if not exists user_id uuid references auth.users(id) on delete cascade;
 
