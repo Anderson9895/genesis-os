@@ -100,17 +100,50 @@ function TeamLead() {
         },
       })
 
-      setMessage(
-        payload?.job
-          ? 'Your job has been submitted to the Genesis Team Lead and is moving into the workforce.'
-          : 'Your job has been submitted.'
-      )
-      if (payload?.job) {
-        setJobs((current) => [payload.job, ...current])
+      const createdJob = payload?.job
+
+      if (!createdJob) {
+        setMessage('Your job has been submitted.')
+      } else {
+        setJobs((current) => [createdJob, ...current])
+        setTitle('')
+        setBrief('')
+        setAssignedEmployee('')
+
+        if (!createdJob.assigned_employee) {
+          setMessage('Your job was saved, but the Team Lead could not assign an employee automatically. Choose an employee and submit it again.')
+        } else {
+          setMessage(`${createdJob.assigned_employee} is working on your request now…`)
+          setRunState((current) => ({ ...current, [createdJob.id]: 'running' }))
+
+          try {
+            const runPayload = await callAiApi(`/api/jobs/${createdJob.id}`, { method: 'POST' })
+
+            if (runPayload?.job) {
+              setJobs((current) =>
+                current.map((job) => (job.id === createdJob.id ? runPayload.job : job))
+              )
+            }
+            if (runPayload?.deliverable) {
+              setDeliverablesByJob((current) => ({
+                ...current,
+                [createdJob.id]: [runPayload.deliverable],
+              }))
+              setMessage('Your finished deliverable is ready below.')
+            } else {
+              setMessage('The employee finished, but no deliverable was returned.')
+            }
+            setRunState((current) => ({ ...current, [createdJob.id]: 'done' }))
+          } catch (runError) {
+            setError(
+              `Your job was saved, but the employee could not start: ${
+                runError.message || 'AI service is not configured.'
+              }`
+            )
+            setRunState((current) => ({ ...current, [createdJob.id]: 'idle' }))
+          }
+        }
       }
-      setTitle('')
-      setBrief('')
-      setAssignedEmployee('')
     } catch (err) {
       setError(err.message || 'Could not submit your job. Please try again.')
     } finally {
@@ -198,7 +231,7 @@ function TeamLead() {
               className="primary-action"
               disabled={submitting}
             >
-              {submitting ? 'Submitting…' : 'Submit to Team Lead'}
+              {submitting ? 'Employee working…' : 'Send job and start employee'}
             </button>
           </div>
         </form>
@@ -210,9 +243,9 @@ function TeamLead() {
       <div className="card">
         <h2>Your Jobs</h2>
         <p className="muted-text">
-          Submit a job, then press “Run employee” to have the assigned AI employee
-          produce a real deliverable for you to review. No completion is faked —
-          if the workforce is not ready, the job stays as-is.
+          Submit a job and Genesis immediately starts the assigned AI employee.
+          Your finished work appears below. If the workforce cannot run, you will
+          see the exact reason and can retry the saved job.
         </p>
 
         {loadingJobs ? (
