@@ -16,7 +16,8 @@ create table if not exists public.tasks (
 );
 
 alter table if exists public.tasks
-  add column if not exists user_id uuid references auth.users(id) on delete cascade;
+  add column if not exists user_id uuid references auth.users(id) on delete cascade,
+  add column if not exists due_date date;
 
 alter table public.tasks enable row level security;
 
@@ -25,23 +26,28 @@ drop policy if exists "Allow public insert access to tasks" on public.tasks;
 drop policy if exists "Allow public update access to tasks" on public.tasks;
 drop policy if exists "Allow public delete access to tasks" on public.tasks;
 
-create policy if not exists "Users can view their own tasks"
+drop policy if exists "Users can view their own tasks" on public.tasks;
+drop policy if exists "Users can insert their own tasks" on public.tasks;
+drop policy if exists "Users can update their own tasks" on public.tasks;
+drop policy if exists "Users can delete their own tasks" on public.tasks;
+
+create policy "Users can view their own tasks"
   on public.tasks
   for select
   using (auth.uid() = user_id);
 
-create policy if not exists "Users can insert their own tasks"
+create policy "Users can insert their own tasks"
   on public.tasks
   for insert
   with check (auth.uid() = user_id);
 
-create policy if not exists "Users can update their own tasks"
+create policy "Users can update their own tasks"
   on public.tasks
   for update
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
-create policy if not exists "Users can delete their own tasks"
+create policy "Users can delete their own tasks"
   on public.tasks
   for delete
   using (auth.uid() = user_id);
@@ -480,5 +486,90 @@ create policy "Users can insert their own daily briefings"
 
 create policy "Users can delete their own daily briefings"
   on public.daily_briefings
+  for delete
+  using (auth.uid() = user_id);
+
+-- ======================================================================
+-- Genesis OS AI Workforce (P2): Jobs and Deliverables
+-- Additive: these tables are new and do not disturb the existing tables.
+-- Following the same RLS idiom as every other table above (every table is
+-- scoped to auth.uid() = user_id with view/insert/update/delete policies).
+-- ======================================================================
+
+create table if not exists public.jobs (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  title text,
+  brief text,
+  assigned_employee text,
+  status text not null default 'queued'
+    check (status in ('queued', 'assigned', 'in_progress', 'delivered', 'cancelled')),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+alter table public.jobs enable row level security;
+
+drop policy if exists "Users can view their own jobs" on public.jobs;
+drop policy if exists "Users can insert their own jobs" on public.jobs;
+drop policy if exists "Users can update their own jobs" on public.jobs;
+drop policy if exists "Users can delete their own jobs" on public.jobs;
+
+create policy "Users can view their own jobs"
+  on public.jobs
+  for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert their own jobs"
+  on public.jobs
+  for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update their own jobs"
+  on public.jobs
+  for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete their own jobs"
+  on public.jobs
+  for delete
+  using (auth.uid() = user_id);
+
+create table if not exists public.deliverables (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  job_id uuid references public.jobs(id) on delete cascade,
+  title text,
+  content jsonb not null default '{}'::jsonb,
+  format text,
+  created_at timestamptz not null default now()
+);
+
+alter table public.deliverables enable row level security;
+
+drop policy if exists "Users can view their own deliverables" on public.deliverables;
+drop policy if exists "Users can insert their own deliverables" on public.deliverables;
+drop policy if exists "Users can update their own deliverables" on public.deliverables;
+drop policy if exists "Users can delete their own deliverables" on public.deliverables;
+
+create policy "Users can view their own deliverables"
+  on public.deliverables
+  for select
+  using (auth.uid() = user_id);
+
+create policy "Users can insert their own deliverables"
+  on public.deliverables
+  for insert
+  with check (auth.uid() = user_id);
+
+create policy "Users can update their own deliverables"
+  on public.deliverables
+  for update
+  using (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create policy "Users can delete their own deliverables"
+  on public.deliverables
   for delete
   using (auth.uid() = user_id);
