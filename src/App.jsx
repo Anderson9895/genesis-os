@@ -13,6 +13,7 @@ import GenesisCompanion from './pages/GenesisCompanion'
 import DailyBriefing from './pages/DailyBriefing'
 import AdminAISettings from './pages/AdminAISettings'
 import TeamLead from './pages/TeamLead'
+import Deliverables from './pages/Deliverables'
 import LoginPage from './pages/Login'
 import { supabase } from './lib/supabaseClient'
 
@@ -44,6 +45,7 @@ function AuthenticatedApp({ user }) {
           <Link to="/admin-ai-settings">🛡 Admin AI Settings</Link>
           <Link to="/ai-employees">🤖 AI Employees</Link>
           <Link to="/team-lead">🧑‍💼 Team Lead</Link>
+          <Link to="/deliverables">📦 Deliverables</Link>
           <Link to="/holy-water">🏜 Holy Water Ranch Co.</Link>
           <Link to="/fields-pastures">🌾 Fields & Pastures</Link>
           <Link to="/time-traveler">📚 Time Traveler</Link>
@@ -64,6 +66,7 @@ function AuthenticatedApp({ user }) {
             <Route path="/admin-ai-settings" element={<AdminAISettings />} />
             <Route path="/ai-employees" element={<AIEmployees />} />
             <Route path="/team-lead" element={<TeamLead />} />
+            <Route path="/deliverables" element={<Deliverables />} />
             <Route path="/holy-water" element={<HolyWater />} />
             <Route path="/holy-water/equipment" element={<HolyWaterEquipment />} />
             <Route path="/fields-pastures" element={<FieldsPastures />} />

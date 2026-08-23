@@ -38,13 +38,33 @@ function TeamLead() {
   const [submitting, setSubmitting] = useState(false)
   const [message, setMessage] = useState(null)
   const [error, setError] = useState(null)
+  // jobId -> 'idle' | 'running' | 'done'
+  const [runState, setRunState] = useState({})
+  // jobId -> [deliverable, ...] for read-only display
+  const [deliverablesByJob, setDeliverablesByJob] = useState({})
+
+  // Load one job's deliverables so delivered jobs render readably on reload.
+  async function loadDeliverablesForJob(jobId) {
+    try {
+      const payload = await callAiApi(`/api/jobs/${jobId}`)
+      const rows = Array.isArray(payload?.deliverables) ? payload.deliverables : []
+      setDeliverablesByJob((current) => ({ ...current, [jobId]: rows }))
+    } catch {
+      // Non-fatal: leave whatever is already shown for this job.
+    }
+  }
 
   async function loadJobs() {
     setLoadingJobs(true)
     setError(null)
     try {
       const payload = await callAiApi('/api/jobs')
-      setJobs(Array.isArray(payload?.jobs) ? payload.jobs : [])
+      const rows = Array.isArray(payload?.jobs) ? payload.jobs : []
+      setJobs(rows)
+      // Fetch deliverables for already-delivered jobs so they persist across reloads.
+      rows.forEach((job) => {
+        if (job.status === 'delivered') loadDeliverablesForJob(job.id)
+      })
     } catch (err) {
       setError(err.message || 'Could not load your jobs.')
     } finally {
@@ -96,6 +116,44 @@ function TeamLead() {
     } finally {
       setSubmitting(false)
     }
+  }
+
+  // Run the assigned employee on a job and surface the real deliverable it returns.
+  async function handleRun(job) {
+    setMessage(null)
+    setError(null)
+    setRunState((current) => ({ ...current, [job.id]: 'running' }))
+
+    try {
+      const payload = await callAiApi(`/api/jobs/${job.id}`, { method: 'POST' })
+
+      if (payload?.job) {
+        setJobs((current) => current.map((j) => (j.id === job.id ? payload.job : j)))
+      }
+      if (payload?.deliverable) {
+        setDeliverablesByJob((current) => ({
+          ...current,
+          [job.id]: [payload.deliverable],
+        }))
+        setMessage('Deliverable produced and saved. Review it below.')
+      }
+      setRunState((current) => ({ ...current, [job.id]: 'done' }))
+    } catch (err) {
+      setError(err.message || 'Could not run this job right now.')
+      setRunState((current) => ({ ...current, [job.id]: 'idle' }))
+    }
+  }
+
+  const canRun = (job) =>
+    (job.status === 'assigned' || job.status === 'queued') && Boolean(job.assigned_employee)
+
+  const deliverableBody = (deliverable) => {
+    const content = deliverable?.content
+    if (typeof content === 'string') return content
+    if (content && typeof content === 'object') {
+      return String(content.body ?? content.content ?? '').trim()
+    }
+    return ''
   }
 
   return (
@@ -152,9 +210,9 @@ function TeamLead() {
       <div className="card">
         <h2>Your Jobs</h2>
         <p className="muted-text">
-          Jobs you submit are created and tracked here. The real AI production
-          loop — where an employee works the job and returns deliverables — is
-          being built next; it will run inside this area.
+          Submit a job, then press “Run employee” to have the assigned AI employee
+          produce a real deliverable for you to review. No completion is faked —
+          if the workforce is not ready, the job stays as-is.
         </p>
 
         {loadingJobs ? (
@@ -163,27 +221,63 @@ function TeamLead() {
           <p className="muted-text">No jobs yet. Submit one above to get started.</p>
         ) : (
           <ul className="job-list">
-            {jobs.map((job) => (
-              <li className="job-item" key={job.id}>
-                <div className="job-item-header">
-                  <strong>{job.title || 'Untitled job'}</strong>
-                  <span className={`status-badge ${(job.status || 'queued').toLowerCase()}`}>
-                    {STATUS_LABELS[job.status] || job.status}
-                  </span>
-                </div>
-                {job.assigned_employee ? (
-                  <p className="job-assigned">
-                    Assigned to: {job.assigned_employee}
+            {jobs.map((job) => {
+              const running = runState[job.id] === 'running'
+              const deliverables = deliverablesByJob[job.id] || []
+              return (
+                <li className="job-item" key={job.id}>
+                  <div className="job-item-header">
+                    <strong>{job.title || 'Untitled job'}</strong>
+                    <span className={`status-badge ${(job.status || 'queued').toLowerCase()}`}>
+                      {STATUS_LABELS[job.status] || job.status}
+                    </span>
+                  </div>
+                  {job.assigned_employee ? (
+                    <p className="job-assigned">
+                      Assigned to: {job.assigned_employee}
+                    </p>
+                  ) : (
+                    <p className="job-assigned muted-text">Not yet assigned</p>
+                  )}
+                  <p className="job-brief">{job.brief}</p>
+                  <p className="muted-text job-date">
+                    {formatDate(job.created_at)}
                   </p>
-                ) : (
-                  <p className="job-assigned muted-text">Not yet assigned</p>
-                )}
-                <p className="job-brief">{job.brief}</p>
-                <p className="muted-text job-date">
-                  {formatDate(job.created_at)}
-                </p>
-              </li>
-            ))}
+
+                  {canRun(job) && !running ? (
+                    <button
+                      type="button"
+                      className="secondary-action"
+                      onClick={() => handleRun(job)}
+                    >
+                      ▶ Run employee — produce deliverable
+                    </button>
+                  ) : null}
+                  {running ? (
+                    <p className="muted-text job-date">⏳ The employee is working on this…</p>
+                  ) : null}
+
+                  {deliverables.length > 0 ? (
+                    <div className="deliverable-block">
+                      <div className="deliverable-label">Deliverable</div>
+                      {deliverables.map((deliverable) => (
+                        <div className="deliverable" key={deliverable.id}>
+                          <div className="deliverable-header">
+                            <strong>{deliverable.title || 'Deliverable'}</strong>
+                            {deliverable.format ? (
+                              <span className="deliverable-format">{deliverable.format}</span>
+                            ) : null}
+                          </div>
+                          <div className="deliverable-body">
+                            {deliverableBody(deliverable)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
