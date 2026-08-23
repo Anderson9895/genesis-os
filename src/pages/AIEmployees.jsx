@@ -63,6 +63,15 @@ const employeeSeedData = [
     status: 'Idle',
     mission: 'Finds opportunities, suppliers, tools, and business ideas.',
     task: 'Research next profitable product idea.'
+  },
+  {
+    id: 8,
+    name: 'Spray Operations Specialist',
+    role: 'Crop Protection & Application',
+    icon: '🌾',
+    status: 'Idle',
+    mission: 'Builds label-grounded spray plans, checks tank-mix risks, calculates rates and calibration, and coordinates field, weather, cost, equipment, and compliance questions with the wider Genesis team.',
+    task: 'Collect the exact label, field, pest, weather, and equipment facts required for a defensible spray plan.'
   }
 ]
 
