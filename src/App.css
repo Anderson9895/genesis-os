@@ -1613,3 +1613,109 @@ body {
     grid-template-columns: 1fr;
   }
 }
+/* ---- Genesis Team Lead / Jobs (P2-2, additive) ---- */
+.teamlead-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 16px 0;
+}
+.teamlead-form input,
+.teamlead-form textarea {
+  padding: 12px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+  font-family: inherit;
+  width: 100%;
+  box-sizing: border-box;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+.teamlead-form textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+.teamlead-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.teamlead-row select {
+  flex: 1;
+  min-width: 220px;
+  padding: 11px;
+  border-radius: 8px;
+  border: none;
+  font-size: 15px;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+.status-badge.queued {
+  background: #334155;
+  color: #e2e8f0;
+}
+.status-badge.assigned {
+  background: #1e3a8a;
+  color: #dbeafe;
+}
+.status-badge.in_progress {
+  background: #854d0e;
+  color: #fef9c3;
+}
+.status-badge.delivered {
+  background: #166534;
+  color: #dcfce7;
+}
+.status-badge.cancelled {
+  background: #7f1d1d;
+  color: #fee2e2;
+}
+.success-text {
+  color: #4ade80;
+  font-weight: 600;
+  margin-top: 12px;
+}
+.error-text {
+  color: #f87171;
+  font-weight: 600;
+  margin-top: 12px;
+}
+.job-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.job-item {
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 16px;
+}
+.job-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.job-item-header strong {
+  color: #facc15;
+  font-size: 17px;
+}
+.job-assigned {
+  margin: 8px 0 4px;
+}
+.job-brief {
+  color: #cbd5e1;
+  white-space: pre-wrap;
+  margin: 4px 0;
+}
+.job-date {
+  font-size: 13px;
+  margin-top: 8px;
+}
