@@ -6,6 +6,7 @@ const EMPLOYEES = [
   { id: 'Business Research & Sales', name: '🔎 Business Research & Sales' },
   { id: 'Content & Social Media', name: '📣 Content & Social Media' },
   { id: 'Software Engineer', name: '💻 Software Engineer' },
+  { id: 'Spray Operations Specialist', name: '🌾 Spray Operations Specialist' },
 ]
 
 const STATUS_LABELS = {
