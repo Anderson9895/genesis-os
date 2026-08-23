@@ -39,20 +39,20 @@ function AuthenticatedApp({ user }) {
         <p>Command Center</p>
 
         <nav>
-          <Link to="/">🏠 Dashboard</Link>
-          <Link to="/intelligence-center">🧭 Intelligence Center</Link>
-          <Link to="/genesis-companion">🗣 Genesis Companion</Link>
-          <Link to="/daily-briefing">🌅 Daily Briefing</Link>
-          <Link to="/admin-ai-settings">🛡 Admin AI Settings</Link>
-          <Link to="/ai-employees">🤖 AI Employees</Link>
-          <Link to="/team-lead">🧑‍💼 Team Lead</Link>
-          <Link to="/deliverables">📦 Deliverables</Link>
-          <Link to="/holy-water">🏜 Holy Water Ranch Co.</Link>
-          <Link to="/fields-pastures">🌾 Fields & Pastures</Link>
-          <Link to="/time-traveler">📚 Time Traveler</Link>
-          <Link to="/farm">🚜 Farm</Link>
-          <Link to="/finance">💰 Finance</Link>
-          <Link to="/ideas">💡 Ideas</Link>
+          <Link to="/app">🏠 Dashboard</Link>
+          <Link to="/app/intelligence-center">🧭 Intelligence Center</Link>
+          <Link to="/app/genesis-companion">🗣 Genesis Companion</Link>
+          <Link to="/app/daily-briefing">🌅 Daily Briefing</Link>
+          <Link to="/app/admin-ai-settings">🛡 Admin AI Settings</Link>
+          <Link to="/app/ai-employees">🤖 AI Employees</Link>
+          <Link to="/app/team-lead">🧑‍💼 Team Lead</Link>
+          <Link to="/app/deliverables">📦 Deliverables</Link>
+          <Link to="/app/holy-water">🏜 Holy Water Ranch Co.</Link>
+          <Link to="/app/fields-pastures">🌾 Fields & Pastures</Link>
+          <Link to="/app/time-traveler">📚 Time Traveler</Link>
+          <Link to="/app/farm">🚜 Farm</Link>
+          <Link to="/app/finance">💰 Finance</Link>
+          <Link to="/app/ideas">💡 Ideas</Link>
         </nav>
       </aside>
 
@@ -60,22 +60,22 @@ function AuthenticatedApp({ user }) {
         <TopBar user={user} onLogout={handleLogout} />
         <main className="main">
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/intelligence-center" element={<IntelligenceCenter />} />
-            <Route path="/genesis-companion" element={<GenesisCompanion />} />
-            <Route path="/daily-briefing" element={<DailyBriefing />} />
-            <Route path="/admin-ai-settings" element={<AdminAISettings />} />
-            <Route path="/ai-employees" element={<AIEmployees />} />
-            <Route path="/team-lead" element={<TeamLead />} />
-            <Route path="/deliverables" element={<Deliverables />} />
-            <Route path="/holy-water" element={<HolyWater />} />
-            <Route path="/holy-water/equipment" element={<HolyWaterEquipment />} />
-            <Route path="/fields-pastures" element={<FieldsPastures />} />
-            <Route path="/time-traveler" element={<Placeholder title="Time Traveler" />} />
-            <Route path="/farm" element={<FieldsPastures />} />
-            <Route path="/finance" element={<Finance />} />
-            <Route path="/ideas" element={<Placeholder title="Ideas" />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="/app" element={<Dashboard />} />
+            <Route path="/app/intelligence-center" element={<IntelligenceCenter />} />
+            <Route path="/app/genesis-companion" element={<GenesisCompanion />} />
+            <Route path="/app/daily-briefing" element={<DailyBriefing />} />
+            <Route path="/app/admin-ai-settings" element={<AdminAISettings />} />
+            <Route path="/app/ai-employees" element={<AIEmployees />} />
+            <Route path="/app/team-lead" element={<TeamLead />} />
+            <Route path="/app/deliverables" element={<Deliverables />} />
+            <Route path="/app/holy-water" element={<HolyWater />} />
+            <Route path="/app/holy-water/equipment" element={<HolyWaterEquipment />} />
+            <Route path="/app/fields-pastures" element={<FieldsPastures />} />
+            <Route path="/app/time-traveler" element={<Placeholder title="Time Traveler" />} />
+            <Route path="/app/farm" element={<FieldsPastures />} />
+            <Route path="/app/finance" element={<Finance />} />
+            <Route path="/app/ideas" element={<Placeholder title="Ideas" />} />
+            <Route path="*" element={<Navigate to="/app" replace />} />
           </Routes>
         </main>
       </div>
@@ -118,10 +118,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={user ? <AuthenticatedApp user={user} /> : <LandingPage />} />
-        <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={user ? <Navigate to="/app" replace /> : <LoginPage />} />
         <Route path="/build-my-team" element={<Navigate to="/login?mode=signup" replace />} />
-        <Route path="*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/" replace />} />
+        <Route path="*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/app" replace />} />
       </Routes>
     </BrowserRouter>
   )
