@@ -121,7 +121,8 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={user ? <Navigate to="/app" replace /> : <LoginPage />} />
         <Route path="/build-my-team" element={<Navigate to="/login?mode=signup" replace />} />
-        <Route path="*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/app" replace />} />
+        <Route path="/app/*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
