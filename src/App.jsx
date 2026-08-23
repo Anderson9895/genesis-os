@@ -15,6 +15,7 @@ import AdminAISettings from './pages/AdminAISettings'
 import TeamLead from './pages/TeamLead'
 import Deliverables from './pages/Deliverables'
 import LoginPage from './pages/Login'
+import LandingPage from './pages/LandingPage'
 import { supabase } from './lib/supabaseClient'
 
 function Placeholder({ title }) {
@@ -117,8 +118,10 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/" element={user ? <AuthenticatedApp user={user} /> : <LandingPage />} />
         <Route path="/login" element={user ? <Navigate to="/" replace /> : <LoginPage />} />
-        <Route path="*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/login" replace />} />
+        <Route path="/build-my-team" element={<Navigate to="/login?mode=signup" replace />} />
+        <Route path="*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   )
