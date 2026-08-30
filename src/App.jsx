@@ -15,6 +15,7 @@ import AdminAISettings from './pages/AdminAISettings'
 import TeamLead from './pages/TeamLead'
 import Deliverables from './pages/Deliverables'
 import FundraiserManager from './pages/FundraiserManager'
+import TikTokOperations from './pages/TikTokOperations'
 import LoginPage from './pages/Login'
 import LandingPage from './pages/LandingPage'
 import { supabase } from './lib/supabaseClient'
@@ -49,6 +50,7 @@ function AuthenticatedApp({ user }) {
           <Link to="/app/team-lead">🧑‍💼 Team Lead</Link>
           <Link to="/app/deliverables">📦 Deliverables</Link>
           <Link to="/app/fundraiser-manager">💍 Fundraiser Manager</Link>
+          <Link to="/app/tiktok-operations">🎬 TikTok Operations</Link>
           <Link to="/app/holy-water">🏜 Holy Water Ranch Co.</Link>
           <Link to="/app/fields-pastures">🌾 Fields & Pastures</Link>
           <Link to="/app/time-traveler">📚 Time Traveler</Link>
@@ -71,6 +73,7 @@ function AuthenticatedApp({ user }) {
             <Route path="/app/team-lead" element={<TeamLead />} />
             <Route path="/app/deliverables" element={<Deliverables />} />
             <Route path="/app/fundraiser-manager" element={<FundraiserManager />} />
+            <Route path="/app/tiktok-operations" element={<TikTokOperations />} />
             <Route path="/app/holy-water" element={<HolyWater />} />
             <Route path="/app/holy-water/equipment" element={<HolyWaterEquipment />} />
             <Route path="/app/fields-pastures" element={<FieldsPastures />} />
