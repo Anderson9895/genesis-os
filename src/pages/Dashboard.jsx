@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import DashboardCard from '../components/DashboardCard'
 import { dashboardCards } from '../data/dashboardData'
 import { initialDashboardSummary } from '../lib/dashboardData'
@@ -361,6 +362,20 @@ function Dashboard() {
           <small>Live revenue pulse</small>
         </article>
       </div>
+
+      <section className="installed-crew-panel">
+        <div className="installed-crew-heading">
+          <div>
+            <p className="eyebrow">Live Campaign</p>
+            <h2>6,000 Strangers. One Question.</h2>
+            <p>Track the $6,000 ring goal, log your $10 weekly pledge, generate daily TikTok posts, count audience votes, and manage sponsor outreach.</p>
+          </div>
+          <div className="installed-crew-actions">
+            <Link to="/app/fundraiser-manager">Open Fundraiser Manager</Link>
+            <a href="https://gofund.me/123dbac74" target="_blank" rel="noreferrer">View GoFundMe</a>
+          </div>
+        </div>
+      </section>
 
       <section className="mission mission-grid">
         <div className="mission-column">
