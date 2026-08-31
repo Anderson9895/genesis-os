@@ -7,6 +7,7 @@ import AIEmployees from './pages/AIEmployees'
 import HolyWater from './pages/HolyWater'
 import HolyWaterEquipment from './pages/HolyWaterEquipment'
 import FieldsPastures from './pages/FieldsPastures'
+import FarmRegistry from './pages/FarmRegistry'
 import Finance from './pages/Finance'
 import IntelligenceCenter from './pages/IntelligenceCenter'
 import GenesisCompanion from './pages/GenesisCompanion'
@@ -52,6 +53,7 @@ function AuthenticatedApp({ user }) {
           <Link to="/app/fundraiser-manager">💍 Fundraiser Manager</Link>
           <Link to="/app/tiktok-operations">🎬 TikTok Operations</Link>
           <Link to="/app/holy-water">🏜 Holy Water Ranch Co.</Link>
+          <Link to="/app/farm-registry">🗺 Farm Registry</Link>
           <Link to="/app/fields-pastures">🌾 Fields & Pastures</Link>
           <Link to="/app/time-traveler">📚 Time Traveler</Link>
           <Link to="/app/farm">🚜 Farm</Link>
@@ -76,6 +78,7 @@ function AuthenticatedApp({ user }) {
             <Route path="/app/tiktok-operations" element={<TikTokOperations />} />
             <Route path="/app/holy-water" element={<HolyWater />} />
             <Route path="/app/holy-water/equipment" element={<HolyWaterEquipment />} />
+            <Route path="/app/farm-registry" element={<FarmRegistry />} />
             <Route path="/app/fields-pastures" element={<FieldsPastures />} />
             <Route path="/app/time-traveler" element={<Placeholder title="Time Traveler" />} />
             <Route path="/app/farm" element={<FieldsPastures />} />

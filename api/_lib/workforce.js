@@ -10,6 +10,7 @@ export const WORKFORCE_EMPLOYEES = [
   { id: 'business-research-sales', name: 'Business Research & Sales', icon: '🔎' },
   { id: 'content-social-media', name: 'Content & Social Media', icon: '📣' },
   { id: 'software-engineer', name: 'Software Engineer', icon: '💻' },
+  { id: 'spray-operations-specialist', name: 'Spray Operations Specialist', icon: '🌾' },
 ]
 
 export const JOB_STATUSES = ['queued', 'assigned', 'in_progress', 'delivered', 'cancelled']
@@ -23,6 +24,12 @@ const CONTENT_KEYWORDS = [
 const RESEARCH_KEYWORDS = [
   'research', 'analy', 'market', 'competitor', 'prospect', 'leads', 'lead',
   'sales', 'opportunity', 'industry', 'sizing', 'customer', 'pricing', 'survey',
+]
+
+const SPRAYING_KEYWORDS = [
+  'spray', 'sprayer', 'herbicide', 'pesticide', 'insecticide', 'fungicide',
+  'chemical', 'tank mix', 'tank-mix', 'nozzle', 'gpa', 'rate per acre',
+  'weed', 'crop protection', 'adjuvant', 'surfactant', 'drift', 'calibration',
 ]
 
 const SOFTWARE_KEYWORDS = [
@@ -50,6 +57,9 @@ export function isKnownEmployee(name) {
 export function pickEmployeeFromBrief(brief) {
   const text = String(brief || '').toLowerCase()
 
+  if (SPRAYING_KEYWORDS.some((keyword) => text.includes(keyword))) {
+    return 'Spray Operations Specialist'
+  }
   if (CONTENT_KEYWORDS.some((keyword) => text.includes(keyword))) {
     return 'Content & Social Media'
   }
