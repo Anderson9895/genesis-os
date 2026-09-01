@@ -27,7 +27,11 @@ const handlers = {
 
 function requestedPath(req) {
   const value = req.query?.path
-  return (Array.isArray(value) ? value.join('/') : String(value || ''))
+  const queryPath = Array.isArray(value) ? value.join('/') : String(value || '')
+  const urlPath = new URL(req.url || '/', 'http://localhost').pathname
+    .replace(/^\/api\/tiktok\/?/, '')
+
+  return (queryPath || urlPath)
     .replace(/^\/+|\/+$/g, '')
 }
 
