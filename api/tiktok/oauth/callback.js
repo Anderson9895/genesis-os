@@ -10,12 +10,12 @@
 // it returns a truthful 503. It never logs, returns, or prints a token, and it
 // never asks the owner to paste one into chat.
 
-import { json, getRequestBody } from '../_lib/http.js'
+import { json, getRequestBody } from '../../_lib/http.js'
 import {
   getClientKey,
   getClientSecret,
   getRedirectUri,
-} from './tokenStore.js'
+} from '../tokenStore.js'
 
 const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/'
 

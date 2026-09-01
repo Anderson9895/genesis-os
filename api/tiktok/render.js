@@ -9,7 +9,7 @@
 
 import { json, getRequestBody } from '../_lib/http.js'
 import { requireTikTokUser } from './_lib.js'
-import { renderCampaignVideo } from '../renderer/mock-renderer.js'
+import { renderCampaignVideo } from '../../renderer/mock-renderer.js'
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return json(res, 405, { error: 'Method not allowed.' })
