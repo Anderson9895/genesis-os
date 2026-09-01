@@ -11,7 +11,7 @@ import {
   getClientKey,
   getRedirectUri,
   getClientSecret,
-} from './tokenStore.js'
+} from './_tokenStore.js'
 
 const SCOPES = encodeURIComponent('user.info.basic,video.publish')
 const AUTHORIZE_URL = 'https://www.tiktok.com/v2/auth/authorize/'

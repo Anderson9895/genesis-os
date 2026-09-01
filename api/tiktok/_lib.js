@@ -4,7 +4,7 @@ import {
   getAuthenticatedUser,
   hasSupabaseServerConfig,
 } from '../_lib/supabase.js'
-import { getAccessToken, getRefreshToken, vaultConfigured } from './tokenStore.js'
+import { getAccessToken, getRefreshToken, vaultConfigured } from './_tokenStore.js'
 
 export const TIKTOK_API_ROOT = 'https://open.tiktokapis.com'
 

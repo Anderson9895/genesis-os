@@ -15,7 +15,7 @@ import {
   getClientKey,
   getClientSecret,
   getRedirectUri,
-} from '../tokenStore.js'
+} from '../_tokenStore.js'
 
 const TOKEN_URL = 'https://open.tiktokapis.com/v2/oauth/token/'
 
