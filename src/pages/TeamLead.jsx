@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
 import { callAiApi } from '../lib/aiApiClient'
 
+import { WORKFORCE_EMPLOYEES } from '../../api/_lib/workforce.js'
+
 const EMPLOYEES = [
   { id: '', name: 'Auto — let the Team Lead choose' },
-  { id: 'Business Research & Sales', name: '🔎 Business Research & Sales' },
-  { id: 'Content & Social Media', name: '📣 Content & Social Media' },
-  { id: 'Software Engineer', name: '💻 Software Engineer' },
+  ...WORKFORCE_EMPLOYEES.map((agent) => ({id: agent.name, name: agent.name})),
 ]
 
 const STATUS_LABELS = {

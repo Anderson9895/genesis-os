@@ -13,6 +13,7 @@ import GenesisCompanion from './pages/GenesisCompanion'
 import DailyBriefing from './pages/DailyBriefing'
 import AdminAISettings from './pages/AdminAISettings'
 import TeamLead from './pages/TeamLead'
+import Headquarters from './pages/Headquarters'
 import Deliverables from './pages/Deliverables'
 import FundraiserManager from './pages/FundraiserManager'
 import TikTokOperations from './pages/TikTokOperations'
@@ -42,6 +43,7 @@ function AuthenticatedApp({ user }) {
 
         <nav>
           <Link to="/app">🏠 Dashboard</Link>
+          <Link to="/app/headquarters">🏢 Team Headquarters</Link>
           <Link to="/app/intelligence-center">🧭 Intelligence Center</Link>
           <Link to="/app/genesis-companion">🗣 Genesis Companion</Link>
           <Link to="/app/daily-briefing">🌅 Daily Briefing</Link>
@@ -65,6 +67,7 @@ function AuthenticatedApp({ user }) {
         <main className="main">
           <Routes>
             <Route path="/app" element={<Dashboard />} />
+            <Route path="/app/headquarters" element={<Headquarters />} />
             <Route path="/app/intelligence-center" element={<IntelligenceCenter />} />
             <Route path="/app/genesis-companion" element={<GenesisCompanion />} />
             <Route path="/app/daily-briefing" element={<DailyBriefing />} />

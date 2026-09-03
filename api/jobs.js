@@ -13,6 +13,7 @@
 // Mirrors the api/ai/* convention: Bearer-token auth, same _lib helpers, rate
 // limited per user.
 
+import headquartersHandler from './_lib/headquarters.js'
 import { json, getBearerToken, getRequestBody } from './_lib/http.js'
 import { consumeRateLimit } from './_lib/rateLimit.js'
 import {
@@ -26,6 +27,7 @@ const MAX_TITLE_LENGTH = 200
 const MAX_BRIEF_LENGTH = 10000
 
 export default async function handler(req, res) {
+  if (req.query?.view === 'headquarters') return headquartersHandler(req, res)
   if (!hasSupabaseServerConfig()) {
     return json(res, 503, { error: 'Server-side Supabase environment is not configured.' })
   }

@@ -6,7 +6,10 @@
 // The actual AI production loop (running an employee on a job) is P2-3.
 // This module does not touch any provider or existing api/ module.
 
+import { TEAM } from '../../shared/team.js'
+
 export const WORKFORCE_EMPLOYEES = [
+  ...TEAM,
   { id: 'business-research-sales', name: 'Business Research & Sales', icon: '🔎' },
   { id: 'content-social-media', name: 'Content & Social Media', icon: '📣' },
   { id: 'software-engineer', name: 'Software Engineer', icon: '💻' },
@@ -49,6 +52,18 @@ export function isKnownEmployee(name) {
  */
 export function pickEmployeeFromBrief(brief) {
   const text = String(brief || '').toLowerCase()
+  const specialistRules = [
+    [/\betsy\b/, 'Etsy Manager'], [/\bshopify\b/, 'Shopify Manager'],
+    [/\bebay\b/, 'eBay Manager'], [/\byoutube\b/, 'YouTube Manager'],
+    [/\bcanva\b/, 'Canva Agent'], [/\b(legal|copyright|trademark|contract)\b/, 'Legal Research & Review'],
+    [/\b(fulfillment|shipment|shipping|supplier)\b/, 'Fulfillment Manager'],
+    [/\b(customer support|customer service|refund|complaint)\b/, 'Customer Support'],
+    [/\b(design|visual|logo)\b/, 'Design Director'], [/\b(product|catalog)\b/, 'Product Manager'],
+    [/\b(marketing|campaign)\b/, 'Marketing Manager'], [/\b(store|storefront)\b/, 'Store Builder'],
+    [/\b(boss|team|coordinate|business plan)\b/, 'AI Boss'],
+  ]
+  const matched = specialistRules.find(([pattern]) => pattern.test(text))
+  if (matched) return matched[1]
 
   if (CONTENT_KEYWORDS.some((keyword) => text.includes(keyword))) {
     return 'Content & Social Media'

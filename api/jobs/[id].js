@@ -23,6 +23,7 @@ import {
 } from '../_lib/supabase.js'
 import { getConfiguredAgentProviders } from '../_lib/agent.js'
 import { runEmployeeOnJob } from '../_lib/runEmployee.js'
+import { loadTeamContext } from '../_lib/teamContext.js'
 
 export default async function handler(req, res) {
   if (!hasSupabaseServerConfig()) {
@@ -116,22 +117,35 @@ export default async function handler(req, res) {
     })
   }
 
+  let sharedContext
+  try {
+    sharedContext = await loadTeamContext(client, user.id)
+  } catch (err) {
+    return json(res, 503, { error: err.message })
+  }
+
   // Mark the job in progress before the (slow) model run.
   const nowIso = new Date().toISOString()
-  const { error: startError } = await client
+  const { data: claimedJob, error: startError } = await client
     .from('jobs')
     .update({ status: 'in_progress', updated_at: nowIso })
     .eq('id', id)
     .eq('user_id', user.id)
+    .in('status', ['assigned', 'queued'])
+    .select('id')
+    .maybeSingle()
 
   if (startError) {
     return json(res, 500, { error: startError.message || 'Could not start the job.' })
   }
 
+  if (!claimedJob) return json(res, 409, { error: 'This job has already been claimed. Refresh its status.' })
+
   let produced
   try {
     produced = await runEmployeeOnJob({
       job,
+      sharedContext,
       provider: configuredProviders[0],
     })
   } catch (runErr) {
