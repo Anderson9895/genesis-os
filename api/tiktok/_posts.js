@@ -35,6 +35,8 @@ export default async function handler(req, res) {
       disable_comment: Boolean(body.disable_comment),
       disable_duet: Boolean(body.disable_duet),
       disable_stitch: Boolean(body.disable_stitch),
+      sponsorship_disclosure: Boolean(body.sponsorship_disclosure),
+      cover_choice: String(body.cover_choice || 'auto').slice(0, 40),
       status: 'draft',
     }
     const { data, error } = await client.from('tiktok_posts').insert(row).select().single()
