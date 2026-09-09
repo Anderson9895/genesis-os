@@ -51,6 +51,7 @@ function Finance() {
 	const [records, setRecords] = useState([])
 	const [form, setForm] = useState(emptyForm)
 	const [receiptFile, setReceiptFile] = useState(null)
+	const [receiptLinks, setReceiptLinks] = useState({})
 	const [searchTerm, setSearchTerm] = useState('')
 	const [dateFrom, setDateFrom] = useState('')
 	const [dateTo, setDateTo] = useState('')
@@ -102,7 +103,18 @@ function Finance() {
 				if (error) throw error
 
 				if (!ignore) {
-					setRecords(Array.isArray(data) ? data : [])
+					const nextRecords = Array.isArray(data) ? data : []
+					const links = await Promise.all(nextRecords.map(async (record) => {
+						if (!record.receipt_url) return null
+						if (/^https:\/\//i.test(record.receipt_url)) return [record.id, record.receipt_url]
+						const { data: signedData } = await supabase.storage
+							.from('finance-receipts')
+							.createSignedUrl(record.receipt_url, 60 * 60)
+						return signedData?.signedUrl ? [record.id, signedData.signedUrl] : null
+					}))
+
+					setRecords(nextRecords)
+					setReceiptLinks(Object.fromEntries(links.filter(Boolean)))
 					setIsUsingSupabase(true)
 					setMessage('')
 					setIsLoading(false)
@@ -322,11 +334,24 @@ function Finance() {
 			throw uploadError
 		}
 
-		const { data: publicData } = supabase.storage
-			.from('finance-receipts')
-			.getPublicUrl(filePath)
+		return filePath
+	}
 
-		return publicData?.publicUrl || null
+	async function cacheReceiptLink(record) {
+		if (!record?.receipt_url || !supabase) return
+
+		if (/^https:\/\//i.test(record.receipt_url)) {
+			setReceiptLinks((current) => ({ ...current, [record.id]: record.receipt_url }))
+			return
+		}
+
+		const { data: signedData } = await supabase.storage
+			.from('finance-receipts')
+			.createSignedUrl(record.receipt_url, 60 * 60)
+
+		if (signedData?.signedUrl) {
+			setReceiptLinks((current) => ({ ...current, [record.id]: signedData.signedUrl }))
+		}
 	}
 
 	async function handleSubmit(event) {
@@ -388,6 +413,7 @@ function Finance() {
 				if (error) throw error
 
 				setRecords((current) => current.map((record) => (record.id === editingId ? data : record)))
+				await cacheReceiptLink(data)
 				setMessage('Transaction updated.')
 			} else {
 				const { data, error } = await supabase
@@ -399,6 +425,7 @@ function Finance() {
 				if (error) throw error
 
 				setRecords((current) => [data, ...current])
+				await cacheReceiptLink(data)
 				setMessage('Transaction added.')
 			}
 
@@ -735,9 +762,11 @@ function Finance() {
 										<td className="holy-water-notes-cell">{record.notes || '-'}</td>
 										<td>
 											{record.receipt_url ? (
-												<a className="brief-link" href={record.receipt_url} target="_blank" rel="noreferrer">
-													View
-												</a>
+												receiptLinks[record.id] ? (
+													<a className="brief-link" href={receiptLinks[record.id]} target="_blank" rel="noreferrer">
+														View
+													</a>
+												) : 'Loading…'
 											) : '-'}
 										</td>
 										<td>
