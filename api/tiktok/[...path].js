@@ -13,9 +13,18 @@ const handlers = {
   status,
 }
 
+function requestedPath(req) {
+  const value = req.query?.path
+  const queryPath = Array.isArray(value) ? value.join('/') : String(value || '')
+  const urlPath = new URL(req.url || '/', 'http://localhost').pathname
+    .replace(/^\/api\/tiktok\/?/, '')
+
+  return (queryPath || urlPath)
+    .replace(/^\/+|\/+$/g, '')
+}
+
 export default async function handler(req, res) {
-  const rawPath = req.query?.path
-  const route = Array.isArray(rawPath) ? rawPath.join('/') : String(rawPath || '')
+  const route = requestedPath(req)
   const routeHandler = handlers[route]
   if (!routeHandler) return json(res, 404, { error: 'TikTok route not found.' })
   return routeHandler(req, res)
