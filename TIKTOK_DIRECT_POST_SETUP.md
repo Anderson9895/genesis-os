@@ -32,3 +32,15 @@ Genesis OS now contains a real TikTok operations queue and official Content Post
 5. Refresh status until TikTok returns a final result.
 
 No automatic public scheduler should be enabled until the manual workflow has completed successfully and TikTok's audit status is verified.
+
+## Additive operations build
+Built additively on the merged base. Nothing has been posted publicly.
+- **OAuth flow (not live):** `GET /api/tiktok/connect` builds the video.publish authorization URL (503 until the app is registered). `GET|POST /api/tiktok/oauth/callback` exchanges the code server-side using the server-only client secret. Tokens never enter the browser, repo, logs, chat, or campaign files.
+- **Secure token vault seam:** `api/tiktok/_tokenStore.js` — server-side only, optional AES-256-GCM encryption-at-rest via `TIKTOK_TOKEN_ENCRYPTION_KEY`. Reports `configured:false` until a real registered app + live authorized credentials exist. `getTikTokConfig` reads the token through the vault.
+- **Renderer (MOCK, clearly labeled):** `renderer/RENDER_SPEC.md` + `api/tiktok/_renderer.js` + `POST /api/tiktok/render`. It never produces or claims a real MP4 and never flips status to "rendered".
+- **Scheduler:** `GET/PUT /api/tiktok/settings` (owner daily time + auto-publish toggle, off by default) and `GET /api/tiktok/schedule` (marks each day `needs approval` when no approved video exists; never posts filler; never duplicates). Auto-publish only runs when connected + audit-approved + owner-enabled.
+- **Webhook:** `POST/GET /api/tiktok/webhook` ingest + `tiktok_webhook_events` audit table (in migration). Acknowledges events; persisting owner rows requires a service-role write path not yet configured — verified via user-authenticated polling (`POST /api/tiktok/publish-status`).
+- **Data model:** additive `supabase/migrations/20260830_tiktok_extensions.sql` adds the `rendered` state, status history, disclosure/cover columns, `tiktok_settings`, `tiktok_webhook_events`, and owner-only RLS. Applied and schema-verified on September 1, 2026.
+- **Free-plan deployment:** all TikTok URLs are dispatched through `api/tiktok/[...path].js`. The individual handlers are underscore-prefixed shared modules, reducing the deployment from 19 functions to 8 and keeping Genesis OS below Vercel Hobby's 12-function limit.
+- **UI:** `TikTokOperations` page now shows a prominent LOCK banner, scheduler/calendar+needs-approval, renderer mock info, disclosure/cover toggles, and per-video owner-approval records.
+- Full, real connection still requires: registered app, video.publish scope approval, domain verification, audit, and account authorization (owner actions per checklist).

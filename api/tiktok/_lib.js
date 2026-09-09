@@ -4,6 +4,7 @@ import {
   getAuthenticatedUser,
   hasSupabaseServerConfig,
 } from '../_lib/supabase.js'
+import { getAccessToken, getRefreshToken, vaultConfigured } from './_tokenStore.js'
 
 export const TIKTOK_API_ROOT = 'https://open.tiktokapis.com'
 
@@ -11,9 +12,11 @@ export function getTikTokConfig() {
   return {
     clientKey: String(process.env.TIKTOK_CLIENT_KEY || '').trim(),
     clientSecretConfigured: Boolean(String(process.env.TIKTOK_CLIENT_SECRET || '').trim()),
-    accessToken: String(process.env.TIKTOK_ACCESS_TOKEN || '').trim(),
+    accessToken: getAccessToken() || '',
+    refreshToken: getRefreshToken() || null,
     auditApproved: String(process.env.TIKTOK_AUDIT_APPROVED || '').toLowerCase() === 'true',
     redirectUri: String(process.env.TIKTOK_REDIRECT_URI || '').trim(),
+    vault: vaultConfigured(),
   }
 }
 

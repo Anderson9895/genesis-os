@@ -11,6 +11,8 @@ const defaultForm = {
   disable_comment: false,
   disable_duet: false,
   disable_stitch: false,
+  sponsorship_disclosure: false,
+  cover_choice: 'auto',
 }
 
 function formatDate(value) {
@@ -29,6 +31,8 @@ export default function TikTokOperations() {
   const [form, setForm] = useState(defaultForm)
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
+  const [settings, setSettings] = useState(null)
+  const [schedule, setSchedule] = useState(null)
 
   const queued = useMemo(() => posts.filter((post) => !['published', 'private_only'].includes(post.status)), [posts])
 
@@ -41,6 +45,8 @@ export default function TikTokOperations() {
       ])
       setConnection(statusResult)
       setPosts(postResult.posts || [])
+      try { setSettings((await callApi('/api/tiktok/settings')).settings) } catch { /* migration may not be applied */ }
+      try { setSchedule(await callApi('/api/tiktok/schedule')) } catch { /* migration may not be applied */ }
       setNotice('TikTok operations loaded from verified records.')
     } catch (error) {
       setNotice(error.message)
@@ -108,6 +114,39 @@ export default function TikTokOperations() {
     }
   }
 
+  async function runRender(post) {
+    setBusy(`render-${post.id}`)
+    try {
+      const result = await callApi('/api/tiktok/render', { method: 'POST', body: { id: post.id } })
+      setNotice(result.note || `Render result: rendered=${result.rendered}, mock=${result.mock}.`)
+    } catch (error) {
+      setNotice(error.message)
+    } finally {
+      setBusy('')
+    }
+  }
+
+  async function saveSettings(event) {
+    event.preventDefault()
+    setBusy('settings')
+    try {
+      const result = await callApi('/api/tiktok/settings', {
+        method: 'PUT',
+        body: {
+          daily_time_utc: settings?.daily_time_utc || '16:00',
+          daily_auto_publish_enabled: Boolean(settings?.daily_auto_publish_enabled),
+        },
+      })
+      setSettings(result.settings)
+      setSchedule(await callApi('/api/tiktok/schedule'))
+      setNotice('Scheduling settings saved. Auto-publish still cannot run until TikTok is connected and the audit passes.')
+    } catch (error) {
+      setNotice(error.message)
+    } finally {
+      setBusy('')
+    }
+  }
+
   return (
     <section className="tiktok-page">
       <header className="tiktok-hero">
@@ -123,6 +162,12 @@ export default function TikTokOperations() {
           <small>{connection?.missing?.length ? `Still needed: ${connection.missing.join(', ')}` : 'Required server settings are present.'}</small>
         </div>
       </header>
+
+      <div className={`tiktok-lock ${connection?.publicPostingUnlocked ? 'unlocked' : 'locked'}`} role="status">
+        <strong>🔒 {connection?.publicPostingUnlocked ? 'PUBLIC DIRECT POST UNLOCKED' : 'PUBLIC DIRECT POST IS LOCKED'}</strong>
+        <p>Public Direct Post is LOCKED until TikTok approves <code>video.publish</code> and the client passes the required audit. Content is <strong>private-only</strong> until then. No public post has been or will be claimed.</p>
+        <small>Audit approved: {connection?.auditApproved ? 'YES' : 'NOT YET'} · TikTok connected: {connection?.configured ? 'YES' : 'NOT YET'}</small>
+      </div>
 
       <div className="tiktok-status-grid">
         <article><span>Queued</span><strong>{queued.length}</strong><small>Drafts and active posts</small></article>
@@ -147,6 +192,8 @@ export default function TikTokOperations() {
               <label><input type="checkbox" checked={form.disable_comment} onChange={(event) => setForm((current) => ({ ...current, disable_comment: event.target.checked }))} /> Disable comments</label>
               <label><input type="checkbox" checked={form.disable_duet} onChange={(event) => setForm((current) => ({ ...current, disable_duet: event.target.checked }))} /> Disable duet</label>
               <label><input type="checkbox" checked={form.disable_stitch} onChange={(event) => setForm((current) => ({ ...current, disable_stitch: event.target.checked }))} /> Disable stitch</label>
+              <label><input type="checkbox" checked={form.sponsorship_disclosure} onChange={(event) => setForm((current) => ({ ...current, sponsorship_disclosure: event.target.checked }))} /> Sponsorship disclosure (none exist yet)</label>
+              <label>Cover <select value={form.cover_choice} onChange={(event) => setForm((current) => ({ ...current, cover_choice: event.target.value }))}><option value="auto">Auto cover</option><option value="first-frame">First frame</option><option value="custom">Custom upload</option></select></label>
             </div>
             <button className="tiktok-primary" disabled={busy === 'create'}>{busy === 'create' ? 'Saving…' : 'Save as unapproved draft'}</button>
           </form>
@@ -167,6 +214,33 @@ export default function TikTokOperations() {
       </div>
 
       <section className="tiktok-panel">
+        <div className="tiktok-heading"><div><span>Scheduler</span><h2>Daily publishing calendar</h2></div><b>One approved video / day</b></div>
+        <p className="tiktok-muted">The scheduler posts one approved campaign video per day at your chosen time (UTC). A day with no approved video is marked <strong>needs approval</strong> — it never posts filler. These settings and the calendar require the additive migration to be applied.</p>
+        <form className="tiktok-form tiktok-settings-form" onSubmit={saveSettings}>
+          <label>Daily publish time (UTC, 24h)<input type="time" value={settings?.daily_time_utc || '16:00'} onChange={(event) => setSettings((current) => ({ ...current, daily_time_utc: event.target.value }))} /></label>
+          <label className="tiktok-inline-toggle"><input type="checkbox" checked={Boolean(settings?.daily_auto_publish_enabled)} onChange={(event) => setSettings((current) => ({ ...current, daily_auto_publish_enabled: event.target.checked }))} /> Enable daily auto-publish</label>
+          <button className="tiktok-secondary" disabled={busy === 'settings'}>{busy === 'settings' ? 'Saving…' : 'Save scheduling settings'}</button>
+        </form>
+        <p className="tiktok-warning">Auto-publish can only run when <strong>all three</strong> are true: daily auto-publish enabled, TikTok connected, and the client passed audit. It is currently {schedule?.auto_publish_can_run ? 'ready to run' : 'NOT ready'} — no external post is generated by scheduling alone.</p>
+        {schedule?.calendar?.length ? (
+          <div className="tiktok-calendar">
+            {schedule.calendar.map((day) => (
+              <div key={day.date} className={`tiktok-day ${day.status}`}>
+                <strong>{day.date}</strong>
+                <span>{day.note}</span>
+                {day.post ? <small>{day.post.title} · {day.status}</small> : <small>No approved video — needs approval</small>}
+              </div>
+            ))}
+          </div>
+        ) : <p className="tiktok-muted">Calendar unavailable (migration not applied or no schedule loaded).</p>}
+      </section>
+
+      <section className="tiktok-panel">
+        <div className="tiktok-heading"><div><span>Renderer</span><h2>Video render pipeline</h2></div><b>Mock · no real render</b></div>
+        <p className="tiktok-muted">A real renderer (a faceless 1080x1920 MP4 renderer) is not installed. The shipped renderer is a clearly-labeled mock that never produces or claims a video. See <code>renderer/RENDER_SPEC.md</code>. Endpoints: <code>POST /api/tiktok/render</code>.</p>
+      </section>
+
+      <section className="tiktok-panel">
         <div className="tiktok-heading"><div><span>Verified post ledger</span><h2>Daily queue</h2></div><b>{posts.length} records</b></div>
         <div className="tiktok-post-list">
           {posts.map((post) => (
@@ -175,11 +249,16 @@ export default function TikTokOperations() {
                 <div className="tiktok-post-top"><strong>{post.title}</strong><span className={`tiktok-badge ${post.status}`}>{statusLabel(post.status)}</span></div>
                 <p>{post.caption}</p>
                 <small>{formatDate(post.scheduled_for)} · {post.privacy_level} · {post.media_url}</small>
+                <small>Cover: {post.cover_choice || 'auto'} · Disclosure: {post.sponsorship_disclosure ? 'ON' : 'OFF'} · {post.disable_comment ? 'no comments' : 'comments on'} · {post.disable_duet ? 'no duet' : 'duet on'} · {post.disable_stitch ? 'no stitch' : 'stitch on'}</small>
+                {post.owner_approved ? <small className="tiktok-approved">Owner approval recorded {formatDate(post.approved_at)}</small> : null}
                 {post.publish_id ? <small>Publish ID: {post.publish_id}</small> : null}
+                {post.tiktok_post_url ? <small>Public post URL: {post.tiktok_post_url}</small> : null}
                 {post.last_error ? <small className="tiktok-error">Error: {post.last_error}</small> : null}
+                {post.status_history?.length ? <small>Status history entries: {post.status_history.length}</small> : null}
               </div>
               <div className="tiktok-actions">
                 {!post.owner_approved ? <button onClick={() => setApproval(post, true)} disabled={Boolean(busy)}>Approve final video</button> : <button onClick={() => setApproval(post, false)} disabled={Boolean(busy) || Boolean(post.publish_id)}>Remove approval</button>}
+                <button onClick={() => runRender(post)} disabled={Boolean(busy)}>Render (mock)</button>
                 <button className="publish" onClick={() => publish(post)} disabled={Boolean(busy) || !post.owner_approved || Boolean(post.publish_id)}>Direct Post</button>
                 {post.publish_id ? <button onClick={() => refreshPost(post)} disabled={Boolean(busy)}>Refresh TikTok status</button> : null}
               </div>
