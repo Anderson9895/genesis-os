@@ -15,6 +15,7 @@ import AdminAISettings from './pages/AdminAISettings'
 import TeamLead from './pages/TeamLead'
 import Headquarters from './pages/Headquarters'
 import Deliverables from './pages/Deliverables'
+import Outreach from './pages/Outreach'
 import FundraiserManager from './pages/FundraiserManager'
 import TikTokOperations from './pages/TikTokOperations'
 import LoginPage from './pages/Login'
@@ -51,6 +52,7 @@ function AuthenticatedApp({ user }) {
           <Link to="/app/ai-employees">🤖 AI Employees</Link>
           <Link to="/app/team-lead">🧑‍💼 Team Lead</Link>
           <Link to="/app/deliverables">📦 Deliverables</Link>
+          <Link to="/app/outreach">📣 Outreach & Leads</Link>
           <Link to="/app/fundraiser-manager">💍 Fundraiser Manager</Link>
           <Link to="/app/tiktok-operations">🎬 TikTok Operations</Link>
           <Link to="/app/holy-water">🏜 Holy Water Ranch Co.</Link>
@@ -75,6 +77,7 @@ function AuthenticatedApp({ user }) {
             <Route path="ai-employees" element={<AIEmployees />} />
             <Route path="team-lead" element={<TeamLead />} />
             <Route path="deliverables" element={<Deliverables />} />
+            <Route path="outreach" element={<Outreach />} />
             <Route path="fundraiser-manager" element={<FundraiserManager />} />
             <Route path="tiktok-operations" element={<TikTokOperations />} />
             <Route path="holy-water" element={<HolyWater />} />
@@ -130,6 +133,7 @@ function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={user ? <Navigate to="/app" replace /> : <LoginPage />} />
         <Route path="/build-my-team" element={<Navigate to="/login?mode=signup" replace />} />
+        <Route path="/outreach" element={user ? <Navigate to="/app/outreach" replace /> : <Navigate to="/login" replace />} />
         <Route path="/app/*" element={user ? <AuthenticatedApp user={user} /> : <Navigate to="/login" replace />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
