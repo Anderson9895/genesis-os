@@ -76,6 +76,8 @@ export default function Farm() {
   const [forms, setForms] = useState(Object.fromEntries(sections.map(s => [s.table, s.defaults])))
   const [status, setStatus] = useState('Loading your operation…')
   const [busy, setBusy] = useState(false)
+  const [question, setQuestion] = useState('')
+  const [answer, setAnswer] = useState('')
 
   async function load() {
     const { data: auth } = await supabase.auth.getUser()
@@ -138,8 +140,8 @@ export default function Farm() {
     const revenue = records.farm_harvests.reduce((sum, item) => sum + Number(item.revenue || 0), 0)
     const pounds = records.farm_harvests.reduce((sum, item) => sum + Number(item.total_weight_lbs || 0), 0)
     const harvestedAcres = records.farm_harvests.reduce((sum, item) => sum + Number(item.harvested_acres || 0), 0)
-    return { acres, cropCosts, livestockCosts, revenue, pounds, harvestedAcres }
-  }, [records])
+    return { acres, cropCosts, livestockCosts, revenue, pounds, harvestedAcres, headCount: livestock.length }
+  }, [records, livestock.length])
 
   const yearly = useMemo(() => {
     const summary = {}
@@ -152,6 +154,19 @@ export default function Farm() {
     })
     return Object.values(summary).sort((a, b) => b.year - a.year)
   }, [records.farm_harvests])
+
+  function answerQuestion(event) {
+    event.preventDefault()
+    const text = question.toLowerCase()
+    const costPerAcre = totals.acres ? totals.cropCosts / totals.acres : 0
+    const costPerHead = totals.headCount ? totals.livestockCosts / totals.headCount : 0
+    if (text.includes('acre') && text.includes('cost')) setAnswer('Recorded crop cost per acre is $' + costPerAcre.toFixed(2) + ' across ' + totals.acres.toFixed(2) + ' acres.')
+    else if ((text.includes('head') || text.includes('animal')) && text.includes('cost')) setAnswer('Recorded livestock event cost per head is $' + costPerHead.toFixed(2) + ' across ' + totals.headCount + ' animals.')
+    else if (text.includes('yield') || text.includes('harvest')) setAnswer('Recorded harvest totals are ' + totals.pounds.toFixed(0) + ' lb from ' + totals.harvestedAcres.toFixed(2) + ' harvested acres, or ' + (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb per acre.')
+    else if (text.includes('revenue') || text.includes('income')) setAnswer('Recorded harvest revenue is $' + totals.revenue.toFixed(2) + '.')
+    else if (text.includes('field') || text.includes('pasture')) setAnswer('You have ' + records.farm_fields.length + ' fields or pastures totaling ' + totals.acres.toFixed(2) + ' acres.')
+    else setAnswer('I can answer typed questions about acres, crop cost per acre, livestock cost per head, fields, harvest yield, and recorded revenue. For chemical rates or treatments, use the current label or a licensed professional.')
+  }
 
   function exportCsv() {
     const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
@@ -192,6 +207,7 @@ export default function Farm() {
           ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
           ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
           ['Livestock event costs', '$' + totals.livestockCosts.toFixed(2)],
+          ['Cost per head', '$' + (totals.headCount ? totals.livestockCosts / totals.headCount : 0).toFixed(2)],
           ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
           ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
         ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
@@ -229,6 +245,15 @@ export default function Farm() {
             {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
           </section>
         ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Ask about your records</h2>
+          <form onSubmit={answerQuestion} style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            <input style={{ ...inputStyle, flex: '1 1 320px' }} value={question} onChange={event => setQuestion(event.target.value)} placeholder="What is my cost per acre?" />
+            <button className="primary-action">Ask</button>
+          </form>
+          {answer && <p style={{ color: '#e2e8f0', marginTop: 14 }}>{answer}</p>}
+        </section>
 
         <section style={panelStyle}>
           <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
