@@ -386,7 +386,7 @@ function Dashboard() {
           </div>
           <div className="installed-crew-actions">
             <a href="https://solar-dog-fence-study.fdgfgfdg.chatgpt.site/" target="_blank" rel="noreferrer">Open Customer Study</a>
-            <a href="https://solar-dog-fence-study.fdgfgfdg.chatgpt.site/results" target="_blank" rel="noreferrer">View Responses</a>
+            <Link to="/app/solar-dog-fence-study">View Responses</Link>
           </div>
         </div>
       </section>
