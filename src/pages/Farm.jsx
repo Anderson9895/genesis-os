@@ -76,6 +76,8 @@ export default function Farm() {
   const [forms, setForms] = useState(Object.fromEntries(sections.map(s => [s.table, s.defaults])))
   const [status, setStatus] = useState('Loading your operation…')
   const [busy, setBusy] = useState(false)
+  const [question, setQuestion] = useState('')
+  const [answer, setAnswer] = useState('')
 
   async function load() {
     const { data: auth } = await supabase.auth.getUser()
@@ -138,8 +140,8 @@ export default function Farm() {
     const revenue = records.farm_harvests.reduce((sum, item) => sum + Number(item.revenue || 0), 0)
     const pounds = records.farm_harvests.reduce((sum, item) => sum + Number(item.total_weight_lbs || 0), 0)
     const harvestedAcres = records.farm_harvests.reduce((sum, item) => sum + Number(item.harvested_acres || 0), 0)
-    return { acres, cropCosts, livestockCosts, revenue, pounds, harvestedAcres }
-  }, [records])
+    return { acres, cropCosts, livestockCosts, revenue, pounds, harvestedAcres, headCount: livestock.length }
+  }, [records, livestock.length])
 
   const yearly = useMemo(() => {
     const summary = {}
@@ -152,6 +154,924 @@ export default function Farm() {
     })
     return Object.values(summary).sort((a, b) => b.year - a.year)
   }, [records.farm_harvests])
+
+  function answerQuestion(event) {
+    event.preventDefault()
+    const text = question.toLowerCase()
+    const costPerAcre = totals.acres ? totals.cropCosts / totals.acres : 0
+    const costPerHead = totals.headCount ? totals.livestockCosts / totals.headCount : 0
+    if (text.includes('acre') && text.includes('cost')) setAnswer('Recorded crop cost per acre is 
+    const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
+    records.farm_fields.forEach(item => rows.push(['field', item.crop_year, item.name, item.tenure, item.acres, item.notes || '']))
+    records.farm_applications.forEach(item => rows.push(['application', item.applied_on, item.product_name, fieldName(item.field_id), item.total_cost, item.notes || '']))
+    records.farm_harvests.forEach(item => rows.push(['harvest', item.harvested_on, item.crop_year, fieldName(item.field_id), item.total_weight_lbs, item.notes || '']))
+    records.farm_costs.forEach(item => rows.push(['cost', item.incurred_on, item.description, fieldName(item.field_id), item.amount, item.notes || '']))
+    records.livestock_events.forEach(item => rows.push(['livestock_event', item.event_date, item.description, animalName(item.livestock_id), item.cost, item.notes || '']))
+    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'genesis-farm-ranch-records.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function renderInput(section, field) {
+    const [name, label, type, required, options] = field
+    const value = forms[section.table][name] ?? ''
+    const change = event => setForms(current => ({ ...current, [section.table]: { ...current[section.table], [name]: event.target.value } }))
+    if (type === 'select') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}>{options.map(option => <option key={option}>{option}</option>)}</select></Field>
+    if (type === 'field') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}><option value="">Choose field or pasture</option>{records.farm_fields.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+    if (type === 'animal') return <Field key={name} label={label}><select style={inputStyle} value={value} onChange={change}><option value="">Group / unassigned</option>{livestock.map(item => <option key={item.id} value={item.id}>{item.tag_number} {item.name ? '— ' + item.name : ''}</option>)}</select></Field>
+    return <Field key={name} label={label}><input style={inputStyle} type={type} required={required} min={type === 'number' ? 0 : undefined} step={type === 'number' ? '0.01' : undefined} value={value} onChange={change} /></Field>
+  }
+
+  return (
+    <div style={{ maxWidth: 1400 }}>
+      <p className="eyebrow">Genesis Farm & Ranch</p>
+      <h1 style={{ marginBottom: 8 }}>Founding Farmer Command Center</h1>
+      <p style={{ color: '#cbd5e1', maxWidth: 900 }}>Private field, livestock, cost, harvest, and year-over-year records in one place.</p>
+      {status && <p style={{ margin: '16px 0', color: status.includes('saved') || status.includes('Saved') ? '#86efac' : '#facc15' }}>{status}</p>}
+
+      <div style={{ ...gridStyle, margin: '22px 0' }}>
+        {[
+          ['Total acres', totals.acres.toFixed(2)],
+          ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
+          ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
+          ['Livestock event costs', ', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Ask about your records</h2>
+          <form onSubmit={answerQuestion} style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+            <input style={{ ...inputStyle, flex: '1 1 320px' }} value={question} onChange={event => setQuestion(event.target.value)} placeholder="What is my cost per acre?" />
+            <button className="primary-action">Ask</button>
+          </form>
+          {answer && <p style={{ color: '#e2e8f0', marginTop: 14 }}>{answer}</p>}
+        </section>
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + costPerAcre.toFixed(2) + ' across ' + totals.acres.toFixed(2) + ' acres.')
+    else if ((text.includes('head') || text.includes('animal')) && text.includes('cost')) setAnswer('Recorded livestock event cost per head is 
+    const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
+    records.farm_fields.forEach(item => rows.push(['field', item.crop_year, item.name, item.tenure, item.acres, item.notes || '']))
+    records.farm_applications.forEach(item => rows.push(['application', item.applied_on, item.product_name, fieldName(item.field_id), item.total_cost, item.notes || '']))
+    records.farm_harvests.forEach(item => rows.push(['harvest', item.harvested_on, item.crop_year, fieldName(item.field_id), item.total_weight_lbs, item.notes || '']))
+    records.farm_costs.forEach(item => rows.push(['cost', item.incurred_on, item.description, fieldName(item.field_id), item.amount, item.notes || '']))
+    records.livestock_events.forEach(item => rows.push(['livestock_event', item.event_date, item.description, animalName(item.livestock_id), item.cost, item.notes || '']))
+    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'genesis-farm-ranch-records.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function renderInput(section, field) {
+    const [name, label, type, required, options] = field
+    const value = forms[section.table][name] ?? ''
+    const change = event => setForms(current => ({ ...current, [section.table]: { ...current[section.table], [name]: event.target.value } }))
+    if (type === 'select') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}>{options.map(option => <option key={option}>{option}</option>)}</select></Field>
+    if (type === 'field') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}><option value="">Choose field or pasture</option>{records.farm_fields.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+    if (type === 'animal') return <Field key={name} label={label}><select style={inputStyle} value={value} onChange={change}><option value="">Group / unassigned</option>{livestock.map(item => <option key={item.id} value={item.id}>{item.tag_number} {item.name ? '— ' + item.name : ''}</option>)}</select></Field>
+    return <Field key={name} label={label}><input style={inputStyle} type={type} required={required} min={type === 'number' ? 0 : undefined} step={type === 'number' ? '0.01' : undefined} value={value} onChange={change} /></Field>
+  }
+
+  return (
+    <div style={{ maxWidth: 1400 }}>
+      <p className="eyebrow">Genesis Farm & Ranch</p>
+      <h1 style={{ marginBottom: 8 }}>Founding Farmer Command Center</h1>
+      <p style={{ color: '#cbd5e1', maxWidth: 900 }}>Private field, livestock, cost, harvest, and year-over-year records in one place.</p>
+      {status && <p style={{ margin: '16px 0', color: status.includes('saved') || status.includes('Saved') ? '#86efac' : '#facc15' }}>{status}</p>}
+
+      <div style={{ ...gridStyle, margin: '22px 0' }}>
+        {[
+          ['Total acres', totals.acres.toFixed(2)],
+          ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
+          ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
+          ['Livestock event costs', '$' + totals.livestockCosts.toFixed(2)],
+          ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + costPerHead.toFixed(2) + ' across ' + totals.headCount + ' animals.')
+    else if (text.includes('yield') || text.includes('harvest')) setAnswer('Recorded harvest totals are ' + totals.pounds.toFixed(0) + ' lb from ' + totals.harvestedAcres.toFixed(2) + ' harvested acres, or ' + (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb per acre.')
+    else if (text.includes('revenue') || text.includes('income')) setAnswer('Recorded harvest revenue is 
+    const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
+    records.farm_fields.forEach(item => rows.push(['field', item.crop_year, item.name, item.tenure, item.acres, item.notes || '']))
+    records.farm_applications.forEach(item => rows.push(['application', item.applied_on, item.product_name, fieldName(item.field_id), item.total_cost, item.notes || '']))
+    records.farm_harvests.forEach(item => rows.push(['harvest', item.harvested_on, item.crop_year, fieldName(item.field_id), item.total_weight_lbs, item.notes || '']))
+    records.farm_costs.forEach(item => rows.push(['cost', item.incurred_on, item.description, fieldName(item.field_id), item.amount, item.notes || '']))
+    records.livestock_events.forEach(item => rows.push(['livestock_event', item.event_date, item.description, animalName(item.livestock_id), item.cost, item.notes || '']))
+    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'genesis-farm-ranch-records.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function renderInput(section, field) {
+    const [name, label, type, required, options] = field
+    const value = forms[section.table][name] ?? ''
+    const change = event => setForms(current => ({ ...current, [section.table]: { ...current[section.table], [name]: event.target.value } }))
+    if (type === 'select') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}>{options.map(option => <option key={option}>{option}</option>)}</select></Field>
+    if (type === 'field') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}><option value="">Choose field or pasture</option>{records.farm_fields.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+    if (type === 'animal') return <Field key={name} label={label}><select style={inputStyle} value={value} onChange={change}><option value="">Group / unassigned</option>{livestock.map(item => <option key={item.id} value={item.id}>{item.tag_number} {item.name ? '— ' + item.name : ''}</option>)}</select></Field>
+    return <Field key={name} label={label}><input style={inputStyle} type={type} required={required} min={type === 'number' ? 0 : undefined} step={type === 'number' ? '0.01' : undefined} value={value} onChange={change} /></Field>
+  }
+
+  return (
+    <div style={{ maxWidth: 1400 }}>
+      <p className="eyebrow">Genesis Farm & Ranch</p>
+      <h1 style={{ marginBottom: 8 }}>Founding Farmer Command Center</h1>
+      <p style={{ color: '#cbd5e1', maxWidth: 900 }}>Private field, livestock, cost, harvest, and year-over-year records in one place.</p>
+      {status && <p style={{ margin: '16px 0', color: status.includes('saved') || status.includes('Saved') ? '#86efac' : '#facc15' }}>{status}</p>}
+
+      <div style={{ ...gridStyle, margin: '22px 0' }}>
+        {[
+          ['Total acres', totals.acres.toFixed(2)],
+          ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
+          ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
+          ['Livestock event costs', '$' + totals.livestockCosts.toFixed(2)],
+          ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + totals.revenue.toFixed(2) + '.')
+    else if (text.includes('field') || text.includes('pasture')) setAnswer('You have ' + records.farm_fields.length + ' fields or pastures totaling ' + totals.acres.toFixed(2) + ' acres.')
+    else setAnswer('I can answer typed questions about acres, crop cost per acre, livestock cost per head, fields, harvest yield, and recorded revenue. For chemical rates or treatments, use the current label or a licensed professional.')
+  }
+
+  function exportCsv() {
+    const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
+    records.farm_fields.forEach(item => rows.push(['field', item.crop_year, item.name, item.tenure, item.acres, item.notes || '']))
+    records.farm_applications.forEach(item => rows.push(['application', item.applied_on, item.product_name, fieldName(item.field_id), item.total_cost, item.notes || '']))
+    records.farm_harvests.forEach(item => rows.push(['harvest', item.harvested_on, item.crop_year, fieldName(item.field_id), item.total_weight_lbs, item.notes || '']))
+    records.farm_costs.forEach(item => rows.push(['cost', item.incurred_on, item.description, fieldName(item.field_id), item.amount, item.notes || '']))
+    records.livestock_events.forEach(item => rows.push(['livestock_event', item.event_date, item.description, animalName(item.livestock_id), item.cost, item.notes || '']))
+    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'genesis-farm-ranch-records.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function renderInput(section, field) {
+    const [name, label, type, required, options] = field
+    const value = forms[section.table][name] ?? ''
+    const change = event => setForms(current => ({ ...current, [section.table]: { ...current[section.table], [name]: event.target.value } }))
+    if (type === 'select') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}>{options.map(option => <option key={option}>{option}</option>)}</select></Field>
+    if (type === 'field') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}><option value="">Choose field or pasture</option>{records.farm_fields.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+    if (type === 'animal') return <Field key={name} label={label}><select style={inputStyle} value={value} onChange={change}><option value="">Group / unassigned</option>{livestock.map(item => <option key={item.id} value={item.id}>{item.tag_number} {item.name ? '— ' + item.name : ''}</option>)}</select></Field>
+    return <Field key={name} label={label}><input style={inputStyle} type={type} required={required} min={type === 'number' ? 0 : undefined} step={type === 'number' ? '0.01' : undefined} value={value} onChange={change} /></Field>
+  }
+
+  return (
+    <div style={{ maxWidth: 1400 }}>
+      <p className="eyebrow">Genesis Farm & Ranch</p>
+      <h1 style={{ marginBottom: 8 }}>Founding Farmer Command Center</h1>
+      <p style={{ color: '#cbd5e1', maxWidth: 900 }}>Private field, livestock, cost, harvest, and year-over-year records in one place.</p>
+      {status && <p style={{ margin: '16px 0', color: status.includes('saved') || status.includes('Saved') ? '#86efac' : '#facc15' }}>{status}</p>}
+
+      <div style={{ ...gridStyle, margin: '22px 0' }}>
+        {[
+          ['Total acres', totals.acres.toFixed(2)],
+          ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
+          ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
+          ['Livestock event costs', '$' + totals.livestockCosts.toFixed(2)],
+          ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + totals.livestockCosts.toFixed(2)],
+          ['Cost per head', ', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + costPerAcre.toFixed(2) + ' across ' + totals.acres.toFixed(2) + ' acres.')
+    else if ((text.includes('head') || text.includes('animal')) && text.includes('cost')) setAnswer('Recorded livestock event cost per head is 
+    const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
+    records.farm_fields.forEach(item => rows.push(['field', item.crop_year, item.name, item.tenure, item.acres, item.notes || '']))
+    records.farm_applications.forEach(item => rows.push(['application', item.applied_on, item.product_name, fieldName(item.field_id), item.total_cost, item.notes || '']))
+    records.farm_harvests.forEach(item => rows.push(['harvest', item.harvested_on, item.crop_year, fieldName(item.field_id), item.total_weight_lbs, item.notes || '']))
+    records.farm_costs.forEach(item => rows.push(['cost', item.incurred_on, item.description, fieldName(item.field_id), item.amount, item.notes || '']))
+    records.livestock_events.forEach(item => rows.push(['livestock_event', item.event_date, item.description, animalName(item.livestock_id), item.cost, item.notes || '']))
+    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'genesis-farm-ranch-records.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function renderInput(section, field) {
+    const [name, label, type, required, options] = field
+    const value = forms[section.table][name] ?? ''
+    const change = event => setForms(current => ({ ...current, [section.table]: { ...current[section.table], [name]: event.target.value } }))
+    if (type === 'select') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}>{options.map(option => <option key={option}>{option}</option>)}</select></Field>
+    if (type === 'field') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}><option value="">Choose field or pasture</option>{records.farm_fields.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+    if (type === 'animal') return <Field key={name} label={label}><select style={inputStyle} value={value} onChange={change}><option value="">Group / unassigned</option>{livestock.map(item => <option key={item.id} value={item.id}>{item.tag_number} {item.name ? '— ' + item.name : ''}</option>)}</select></Field>
+    return <Field key={name} label={label}><input style={inputStyle} type={type} required={required} min={type === 'number' ? 0 : undefined} step={type === 'number' ? '0.01' : undefined} value={value} onChange={change} /></Field>
+  }
+
+  return (
+    <div style={{ maxWidth: 1400 }}>
+      <p className="eyebrow">Genesis Farm & Ranch</p>
+      <h1 style={{ marginBottom: 8 }}>Founding Farmer Command Center</h1>
+      <p style={{ color: '#cbd5e1', maxWidth: 900 }}>Private field, livestock, cost, harvest, and year-over-year records in one place.</p>
+      {status && <p style={{ margin: '16px 0', color: status.includes('saved') || status.includes('Saved') ? '#86efac' : '#facc15' }}>{status}</p>}
+
+      <div style={{ ...gridStyle, margin: '22px 0' }}>
+        {[
+          ['Total acres', totals.acres.toFixed(2)],
+          ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
+          ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
+          ['Livestock event costs', '$' + totals.livestockCosts.toFixed(2)],
+          ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + costPerHead.toFixed(2) + ' across ' + totals.headCount + ' animals.')
+    else if (text.includes('yield') || text.includes('harvest')) setAnswer('Recorded harvest totals are ' + totals.pounds.toFixed(0) + ' lb from ' + totals.harvestedAcres.toFixed(2) + ' harvested acres, or ' + (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb per acre.')
+    else if (text.includes('revenue') || text.includes('income')) setAnswer('Recorded harvest revenue is 
+    const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
+    records.farm_fields.forEach(item => rows.push(['field', item.crop_year, item.name, item.tenure, item.acres, item.notes || '']))
+    records.farm_applications.forEach(item => rows.push(['application', item.applied_on, item.product_name, fieldName(item.field_id), item.total_cost, item.notes || '']))
+    records.farm_harvests.forEach(item => rows.push(['harvest', item.harvested_on, item.crop_year, fieldName(item.field_id), item.total_weight_lbs, item.notes || '']))
+    records.farm_costs.forEach(item => rows.push(['cost', item.incurred_on, item.description, fieldName(item.field_id), item.amount, item.notes || '']))
+    records.livestock_events.forEach(item => rows.push(['livestock_event', item.event_date, item.description, animalName(item.livestock_id), item.cost, item.notes || '']))
+    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'genesis-farm-ranch-records.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function renderInput(section, field) {
+    const [name, label, type, required, options] = field
+    const value = forms[section.table][name] ?? ''
+    const change = event => setForms(current => ({ ...current, [section.table]: { ...current[section.table], [name]: event.target.value } }))
+    if (type === 'select') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}>{options.map(option => <option key={option}>{option}</option>)}</select></Field>
+    if (type === 'field') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}><option value="">Choose field or pasture</option>{records.farm_fields.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+    if (type === 'animal') return <Field key={name} label={label}><select style={inputStyle} value={value} onChange={change}><option value="">Group / unassigned</option>{livestock.map(item => <option key={item.id} value={item.id}>{item.tag_number} {item.name ? '— ' + item.name : ''}</option>)}</select></Field>
+    return <Field key={name} label={label}><input style={inputStyle} type={type} required={required} min={type === 'number' ? 0 : undefined} step={type === 'number' ? '0.01' : undefined} value={value} onChange={change} /></Field>
+  }
+
+  return (
+    <div style={{ maxWidth: 1400 }}>
+      <p className="eyebrow">Genesis Farm & Ranch</p>
+      <h1 style={{ marginBottom: 8 }}>Founding Farmer Command Center</h1>
+      <p style={{ color: '#cbd5e1', maxWidth: 900 }}>Private field, livestock, cost, harvest, and year-over-year records in one place.</p>
+      {status && <p style={{ margin: '16px 0', color: status.includes('saved') || status.includes('Saved') ? '#86efac' : '#facc15' }}>{status}</p>}
+
+      <div style={{ ...gridStyle, margin: '22px 0' }}>
+        {[
+          ['Total acres', totals.acres.toFixed(2)],
+          ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
+          ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
+          ['Livestock event costs', '$' + totals.livestockCosts.toFixed(2)],
+          ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + totals.revenue.toFixed(2) + '.')
+    else if (text.includes('field') || text.includes('pasture')) setAnswer('You have ' + records.farm_fields.length + ' fields or pastures totaling ' + totals.acres.toFixed(2) + ' acres.')
+    else setAnswer('I can answer typed questions about acres, crop cost per acre, livestock cost per head, fields, harvest yield, and recorded revenue. For chemical rates or treatments, use the current label or a licensed professional.')
+  }
+
+  function exportCsv() {
+    const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
+    records.farm_fields.forEach(item => rows.push(['field', item.crop_year, item.name, item.tenure, item.acres, item.notes || '']))
+    records.farm_applications.forEach(item => rows.push(['application', item.applied_on, item.product_name, fieldName(item.field_id), item.total_cost, item.notes || '']))
+    records.farm_harvests.forEach(item => rows.push(['harvest', item.harvested_on, item.crop_year, fieldName(item.field_id), item.total_weight_lbs, item.notes || '']))
+    records.farm_costs.forEach(item => rows.push(['cost', item.incurred_on, item.description, fieldName(item.field_id), item.amount, item.notes || '']))
+    records.livestock_events.forEach(item => rows.push(['livestock_event', item.event_date, item.description, animalName(item.livestock_id), item.cost, item.notes || '']))
+    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'genesis-farm-ranch-records.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function renderInput(section, field) {
+    const [name, label, type, required, options] = field
+    const value = forms[section.table][name] ?? ''
+    const change = event => setForms(current => ({ ...current, [section.table]: { ...current[section.table], [name]: event.target.value } }))
+    if (type === 'select') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}>{options.map(option => <option key={option}>{option}</option>)}</select></Field>
+    if (type === 'field') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}><option value="">Choose field or pasture</option>{records.farm_fields.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+    if (type === 'animal') return <Field key={name} label={label}><select style={inputStyle} value={value} onChange={change}><option value="">Group / unassigned</option>{livestock.map(item => <option key={item.id} value={item.id}>{item.tag_number} {item.name ? '— ' + item.name : ''}</option>)}</select></Field>
+    return <Field key={name} label={label}><input style={inputStyle} type={type} required={required} min={type === 'number' ? 0 : undefined} step={type === 'number' ? '0.01' : undefined} value={value} onChange={change} /></Field>
+  }
+
+  return (
+    <div style={{ maxWidth: 1400 }}>
+      <p className="eyebrow">Genesis Farm & Ranch</p>
+      <h1 style={{ marginBottom: 8 }}>Founding Farmer Command Center</h1>
+      <p style={{ color: '#cbd5e1', maxWidth: 900 }}>Private field, livestock, cost, harvest, and year-over-year records in one place.</p>
+      {status && <p style={{ margin: '16px 0', color: status.includes('saved') || status.includes('Saved') ? '#86efac' : '#facc15' }}>{status}</p>}
+
+      <div style={{ ...gridStyle, margin: '22px 0' }}>
+        {[
+          ['Total acres', totals.acres.toFixed(2)],
+          ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
+          ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
+          ['Livestock event costs', '$' + totals.livestockCosts.toFixed(2)],
+          ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + (totals.headCount ? totals.livestockCosts / totals.headCount : 0).toFixed(2)],
+          ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + costPerAcre.toFixed(2) + ' across ' + totals.acres.toFixed(2) + ' acres.')
+    else if ((text.includes('head') || text.includes('animal')) && text.includes('cost')) setAnswer('Recorded livestock event cost per head is 
+    const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
+    records.farm_fields.forEach(item => rows.push(['field', item.crop_year, item.name, item.tenure, item.acres, item.notes || '']))
+    records.farm_applications.forEach(item => rows.push(['application', item.applied_on, item.product_name, fieldName(item.field_id), item.total_cost, item.notes || '']))
+    records.farm_harvests.forEach(item => rows.push(['harvest', item.harvested_on, item.crop_year, fieldName(item.field_id), item.total_weight_lbs, item.notes || '']))
+    records.farm_costs.forEach(item => rows.push(['cost', item.incurred_on, item.description, fieldName(item.field_id), item.amount, item.notes || '']))
+    records.livestock_events.forEach(item => rows.push(['livestock_event', item.event_date, item.description, animalName(item.livestock_id), item.cost, item.notes || '']))
+    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'genesis-farm-ranch-records.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function renderInput(section, field) {
+    const [name, label, type, required, options] = field
+    const value = forms[section.table][name] ?? ''
+    const change = event => setForms(current => ({ ...current, [section.table]: { ...current[section.table], [name]: event.target.value } }))
+    if (type === 'select') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}>{options.map(option => <option key={option}>{option}</option>)}</select></Field>
+    if (type === 'field') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}><option value="">Choose field or pasture</option>{records.farm_fields.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+    if (type === 'animal') return <Field key={name} label={label}><select style={inputStyle} value={value} onChange={change}><option value="">Group / unassigned</option>{livestock.map(item => <option key={item.id} value={item.id}>{item.tag_number} {item.name ? '— ' + item.name : ''}</option>)}</select></Field>
+    return <Field key={name} label={label}><input style={inputStyle} type={type} required={required} min={type === 'number' ? 0 : undefined} step={type === 'number' ? '0.01' : undefined} value={value} onChange={change} /></Field>
+  }
+
+  return (
+    <div style={{ maxWidth: 1400 }}>
+      <p className="eyebrow">Genesis Farm & Ranch</p>
+      <h1 style={{ marginBottom: 8 }}>Founding Farmer Command Center</h1>
+      <p style={{ color: '#cbd5e1', maxWidth: 900 }}>Private field, livestock, cost, harvest, and year-over-year records in one place.</p>
+      {status && <p style={{ margin: '16px 0', color: status.includes('saved') || status.includes('Saved') ? '#86efac' : '#facc15' }}>{status}</p>}
+
+      <div style={{ ...gridStyle, margin: '22px 0' }}>
+        {[
+          ['Total acres', totals.acres.toFixed(2)],
+          ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
+          ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
+          ['Livestock event costs', '$' + totals.livestockCosts.toFixed(2)],
+          ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + costPerHead.toFixed(2) + ' across ' + totals.headCount + ' animals.')
+    else if (text.includes('yield') || text.includes('harvest')) setAnswer('Recorded harvest totals are ' + totals.pounds.toFixed(0) + ' lb from ' + totals.harvestedAcres.toFixed(2) + ' harvested acres, or ' + (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb per acre.')
+    else if (text.includes('revenue') || text.includes('income')) setAnswer('Recorded harvest revenue is 
+    const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
+    records.farm_fields.forEach(item => rows.push(['field', item.crop_year, item.name, item.tenure, item.acres, item.notes || '']))
+    records.farm_applications.forEach(item => rows.push(['application', item.applied_on, item.product_name, fieldName(item.field_id), item.total_cost, item.notes || '']))
+    records.farm_harvests.forEach(item => rows.push(['harvest', item.harvested_on, item.crop_year, fieldName(item.field_id), item.total_weight_lbs, item.notes || '']))
+    records.farm_costs.forEach(item => rows.push(['cost', item.incurred_on, item.description, fieldName(item.field_id), item.amount, item.notes || '']))
+    records.livestock_events.forEach(item => rows.push(['livestock_event', item.event_date, item.description, animalName(item.livestock_id), item.cost, item.notes || '']))
+    const csv = rows.map(row => row.map(value => '"' + String(value ?? '').replaceAll('"', '""') + '"').join(',')).join('\n')
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = 'genesis-farm-ranch-records.csv'
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  function renderInput(section, field) {
+    const [name, label, type, required, options] = field
+    const value = forms[section.table][name] ?? ''
+    const change = event => setForms(current => ({ ...current, [section.table]: { ...current[section.table], [name]: event.target.value } }))
+    if (type === 'select') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}>{options.map(option => <option key={option}>{option}</option>)}</select></Field>
+    if (type === 'field') return <Field key={name} label={label}><select style={inputStyle} required={required} value={value} onChange={change}><option value="">Choose field or pasture</option>{records.farm_fields.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></Field>
+    if (type === 'animal') return <Field key={name} label={label}><select style={inputStyle} value={value} onChange={change}><option value="">Group / unassigned</option>{livestock.map(item => <option key={item.id} value={item.id}>{item.tag_number} {item.name ? '— ' + item.name : ''}</option>)}</select></Field>
+    return <Field key={name} label={label}><input style={inputStyle} type={type} required={required} min={type === 'number' ? 0 : undefined} step={type === 'number' ? '0.01' : undefined} value={value} onChange={change} /></Field>
+  }
+
+  return (
+    <div style={{ maxWidth: 1400 }}>
+      <p className="eyebrow">Genesis Farm & Ranch</p>
+      <h1 style={{ marginBottom: 8 }}>Founding Farmer Command Center</h1>
+      <p style={{ color: '#cbd5e1', maxWidth: 900 }}>Private field, livestock, cost, harvest, and year-over-year records in one place.</p>
+      {status && <p style={{ margin: '16px 0', color: status.includes('saved') || status.includes('Saved') ? '#86efac' : '#facc15' }}>{status}</p>}
+
+      <div style={{ ...gridStyle, margin: '22px 0' }}>
+        {[
+          ['Total acres', totals.acres.toFixed(2)],
+          ['Crop costs', '$' + totals.cropCosts.toFixed(2)],
+          ['Cost per acre', '$' + (totals.acres ? totals.cropCosts / totals.acres : 0).toFixed(2)],
+          ['Livestock event costs', '$' + totals.livestockCosts.toFixed(2)],
+          ['Harvest revenue', '$' + totals.revenue.toFixed(2)],
+          ['Yield / harvested acre', (totals.harvestedAcres ? totals.pounds / totals.harvestedAcres : 0).toFixed(1) + ' lb']
+        ].map(([label, value]) => <article key={label} style={panelStyle}><small style={{ color: '#94a3b8' }}>{label}</small><strong style={{ color: '#facc15', display: 'block', fontSize: 26, marginTop: 7 }}>{value}</strong></article>)}
+      </div>
+
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
+        <button className="primary-action" onClick={() => window.print()}>Print report</button>
+        <button className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px' }} onClick={exportCsv}>Export CSV</button>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/finance">Invoices & receipts</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/genesis-companion">Ask Genesis</Link>
+        <Link className="secondary-action" style={{ borderRadius: 8, padding: '10px 12px', textDecoration: 'none' }} to="/app/fields-pastures">Detailed pastures</Link>
+      </div>
+
+      <div style={{ display: 'grid', gap: 16 }}>
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Operation profile</h2>
+          <form onSubmit={saveProfile} style={{ display: 'grid', gap: 10 }}>
+            <div style={gridStyle}>
+              {[['operation_name','Operation name'],['county_state','County / state'],['production_focus','Production focus'],['certification_status','Certification status']].map(([name,label]) => <Field key={name} label={label}><input style={inputStyle} required={name === 'operation_name'} value={profile[name] || ''} onChange={e => setProfile({ ...profile, [name]: e.target.value })} /></Field>)}
+              <Field label="Operation type"><select style={inputStyle} value={profile.operation_type || 'Farm & Ranch'} onChange={e => setProfile({ ...profile, operation_type: e.target.value })}><option>Farm</option><option>Ranch</option><option>Farm & Ranch</option></select></Field>
+            </div>
+            <Field label="Notes"><textarea style={inputStyle} value={profile.notes || ''} onChange={e => setProfile({ ...profile, notes: e.target.value })} /></Field>
+            <button disabled={busy} className="primary-action">Save profile</button>
+          </form>
+        </section>
+
+        {sections.map(section => (
+          <section key={section.table} style={panelStyle}>
+            <h2 style={{ color: '#facc15' }}>{section.title}</h2>
+            {section.warning && <p style={{ color: '#fbbf24', marginBottom: 12 }}>Safety: {section.warning}</p>}
+            <form onSubmit={event => saveRecord(event, section)} style={{ display: 'grid', gap: 10 }}>
+              <div style={gridStyle}>{section.fields.map(field => renderInput(section, field))}</div>
+              <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
+            </form>
+            {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+          </section>
+        ))}
+
+        <section style={panelStyle}>
+          <h2 style={{ color: '#facc15' }}>Yearly comparison</h2>
+          {yearly.length ? <div style={gridStyle}>{yearly.map(item => <article key={item.year} style={{ background: '#020617', borderRadius: 10, padding: 12 }}><strong style={{ color: '#facc15' }}>{item.year}</strong><p>{item.pounds.toFixed(0)} lb · {'$' + item.revenue.toFixed(2)}</p><small>{(item.acres ? item.pounds / item.acres : 0).toFixed(1)} lb/acre</small></article>)}</div> : <p style={{ color: '#94a3b8' }}>Add a harvest to begin year-over-year comparison.</p>}
+        </section>
+      </div>
+
+      <p style={{ color: '#94a3b8', marginTop: 18 }}>Genesis organizes owner-entered records. Verify labels, veterinary directions, regulatory filings, taxes, and certification requirements with the appropriate current source or licensed professional.</p>
+    </div>
+  )
+}
+ + totals.revenue.toFixed(2) + '.')
+    else if (text.includes('field') || text.includes('pasture')) setAnswer('You have ' + records.farm_fields.length + ' fields or pastures totaling ' + totals.acres.toFixed(2) + ' acres.')
+    else setAnswer('I can answer typed questions about acres, crop cost per acre, livestock cost per head, fields, harvest yield, and recorded revenue. For chemical rates or treatments, use the current label or a licensed professional.')
+  }
 
   function exportCsv() {
     const rows = [['record_type','date_or_year','description','field_or_animal','amount_or_quantity','notes']]
