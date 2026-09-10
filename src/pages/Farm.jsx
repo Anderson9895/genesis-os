@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabaseClient'
+import FarmDocuments from '../components/FarmDocuments'
 
 const today = new Date().toISOString().slice(0, 10)
 const year = new Date().getFullYear()
@@ -133,6 +134,23 @@ export default function Farm() {
     return animal ? (animal.name || animal.tag_number) : 'Group / unassigned'
   }
 
+  const canAttach = table => ['farm_fields', 'farm_applications', 'farm_harvests', 'farm_costs'].includes(table)
+
+  const recordSummary = (table, item) => {
+    switch (table) {
+      case 'farm_fields':
+        return `${item.name} — ${item.tenure} · ${item.acres} ac · ${item.crop_year}`
+      case 'farm_applications':
+        return `${item.applied_on} · ${item.product_name} · ${fieldName(item.field_id)} · ${Number(item.total_cost || 0).toFixed(2)}`
+      case 'farm_harvests':
+        return `${item.harvested_on} · ${item.crop_year} · ${Number(item.total_weight_lbs || 0).toFixed(0)} lb · ${Number(item.revenue || 0).toFixed(2)}`
+      case 'farm_costs':
+        return `${item.incurred_on} · ${item.category} · ${item.description} · ${Number(item.amount || 0).toFixed(2)}`
+      default:
+        return item.name || item.description || String(item.id)
+    }
+  }
+
   const totals = useMemo(() => {
     const acres = records.farm_fields.reduce((sum, item) => sum + Number(item.acres || 0), 0)
     const cropCosts = records.farm_costs.reduce((sum, item) => sum + Number(item.amount || 0), 0) + records.farm_applications.reduce((sum, item) => sum + Number(item.total_cost || 0), 0)
@@ -243,6 +261,18 @@ export default function Farm() {
               <button disabled={busy || (section.needsField && !records.farm_fields.length)} className="primary-action">Save record</button>
             </form>
             {records[section.table].length > 0 && <p style={{ color: '#94a3b8', marginTop: 12 }}>{records[section.table].length} saved record{records[section.table].length === 1 ? '' : 's'}.</p>}
+            {canAttach(section.table) && records[section.table].length > 0 && (
+              <div style={{ marginTop: 8 }}>
+                {records[section.table].map(item => (
+                  <div key={item.id} style={{ background: '#020617', borderRadius: 10, padding: '8px 12px', marginTop: 8 }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'center', justifyContent: 'space-between' }}>
+                      <span style={{ color: '#e2e8f0', fontSize: 13 }}>{recordSummary(section.table, item)}</span>
+                      <FarmDocuments recordType={section.table} recordId={item.id} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </section>
         ))}
 

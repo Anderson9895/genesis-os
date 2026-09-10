@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import FarmDocuments from '../components/FarmDocuments'
 
 const businessOptions = ['Holy Water Ranch', 'Time Traveler', 'Genesis OS', 'Other']
 const paymentMethodOptions = ['Cash', 'Card', 'Bank Transfer', 'Check', 'Digital Wallet', 'Other']
@@ -62,6 +63,7 @@ function Finance() {
 	const [isUsingSupabase, setIsUsingSupabase] = useState(isSupabaseConfigured())
 	const [message, setMessage] = useState('')
 	const [editingId, setEditingId] = useState(null)
+	const [openDocsId, setOpenDocsId] = useState(null)
 
 	useEffect(() => {
 		let ignore = false
@@ -742,12 +744,14 @@ function Finance() {
 									<th>Payment Method</th>
 									<th>Notes</th>
 									<th>Receipt</th>
+									<th>Invoices</th>
 									<th>Actions</th>
 								</tr>
 							</thead>
 							<tbody>
 								{filteredRecords.map((record) => (
-									<tr key={record.id}>
+									<Fragment key={record.id}>
+									<tr>
 										<td>{record.date || '-'}</td>
 										<td>
 											<span className={record.transaction_type === 'income' ? 'income-pill' : 'expense-pill'}>
@@ -770,6 +774,15 @@ function Finance() {
 											) : '-'}
 										</td>
 										<td>
+											<button
+												type="button"
+												className="secondary-action"
+												onClick={() => setOpenDocsId(openDocsId === record.id ? null : record.id)}
+											>
+												{openDocsId === record.id ? 'Hide' : 'Invoices'}
+											</button>
+										</td>
+										<td>
 											<div className="holy-water-row-actions">
 												<button type="button" className="secondary-action" onClick={() => startEdit(record)}>
 													Edit
@@ -780,6 +793,14 @@ function Finance() {
 											</div>
 										</td>
 									</tr>
+									{openDocsId === record.id && (
+										<tr>
+										<td colSpan="11" style={{ background: 'transparent', padding: '4px 12px 12px' }}>
+											<FarmDocuments recordType="finance_transactions" recordId={record.id} />
+										</td>
+										</tr>
+									)}
+									</Fragment>
 								))}
 							</tbody>
 						</table>

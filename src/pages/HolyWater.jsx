@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { isSupabaseConfigured, supabase } from '../lib/supabaseClient'
+import FarmDocuments from '../components/FarmDocuments'
 
 const emptyForm = {
 	tag_number: '',
@@ -70,6 +71,7 @@ function HolyWater() {
 	const [isUsingSupabase, setIsUsingSupabase] = useState(isSupabaseConfigured())
 	const [message, setMessage] = useState('')
 	const [editingRecordId, setEditingRecordId] = useState(null)
+	const [openDocsId, setOpenDocsId] = useState(null)
 
 	useEffect(() => {
 		let ignore = false
@@ -548,12 +550,14 @@ function HolyWater() {
 									<th>Weight</th>
 									<th>Status</th>
 									<th>Notes</th>
+									<th>Attachments</th>
 									<th>Actions</th>
 								</tr>
 							</thead>
 							<tbody>
 								{filteredRecords.map((record) => (
-									<tr key={record.id}>
+									<Fragment key={record.id}>
+									<tr>
 										<td>
 											{record.photo_url ? (
 												<img
@@ -574,6 +578,15 @@ function HolyWater() {
 										<td>{record.status || '-'}</td>
 										<td className="holy-water-notes-cell">{record.notes || '-'}</td>
 										<td>
+											<button
+												type="button"
+												className="secondary-action"
+												onClick={() => setOpenDocsId(openDocsId === record.id ? null : record.id)}
+											>
+												{openDocsId === record.id ? 'Hide' : 'Attachments'}
+											</button>
+										</td>
+										<td>
 											<div className="holy-water-row-actions">
 												<button
 													type="button"
@@ -592,6 +605,14 @@ function HolyWater() {
 											</div>
 										</td>
 									</tr>
+									{openDocsId === record.id && (
+										<tr>
+										<td colSpan="11" style={{ background: 'transparent', padding: '4px 12px 12px' }}>
+											<FarmDocuments recordType="livestock_records" recordId={record.id} />
+										</td>
+										</tr>
+									)}
+									</Fragment>
 								))}
 							</tbody>
 						</table>
