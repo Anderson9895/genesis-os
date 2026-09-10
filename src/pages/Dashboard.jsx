@@ -377,6 +377,20 @@ function Dashboard() {
         </div>
       </section>
 
+      <section className="installed-crew-panel">
+        <div className="installed-crew-heading">
+          <div>
+            <p className="eyebrow">Product Validation</p>
+            <h2>Solar GPS Dog Fence Study</h2>
+            <p>Survey ranchers and dog owners, compare collar and harness designs, and review prospective field testers from one place.</p>
+          </div>
+          <div className="installed-crew-actions">
+            <a href="https://solar-dog-fence-study.fdgfgfdg.chatgpt.site/" target="_blank" rel="noreferrer">Open Customer Study</a>
+            <a href="https://solar-dog-fence-study.fdgfgfdg.chatgpt.site/results" target="_blank" rel="noreferrer">View Responses</a>
+          </div>
+        </div>
+      </section>
+
       <section className="mission mission-grid">
         <div className="mission-column">
           <div className="mission-header">
