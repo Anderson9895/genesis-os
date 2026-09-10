@@ -7,6 +7,7 @@ import AIEmployees from './pages/AIEmployees'
 import HolyWater from './pages/HolyWater'
 import HolyWaterEquipment from './pages/HolyWaterEquipment'
 import FieldsPastures from './pages/FieldsPastures'
+import Farm from './pages/Farm'
 import Finance from './pages/Finance'
 import IntelligenceCenter from './pages/IntelligenceCenter'
 import GenesisCompanion from './pages/GenesisCompanion'
@@ -84,7 +85,7 @@ function AuthenticatedApp({ user }) {
             <Route path="holy-water/equipment" element={<HolyWaterEquipment />} />
             <Route path="fields-pastures" element={<FieldsPastures />} />
             <Route path="time-traveler" element={<Placeholder title="Time Traveler" />} />
-            <Route path="farm" element={<FieldsPastures />} />
+            <Route path="farm" element={<Farm />} />
             <Route path="finance" element={<Finance />} />
             <Route path="ideas" element={<Placeholder title="Ideas" />} />
             <Route path="*" element={<Navigate to="/app" replace />} />
