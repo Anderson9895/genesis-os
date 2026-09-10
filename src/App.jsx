@@ -61,6 +61,7 @@ function AuthenticatedApp({ user }) {
           <Link to="/app/time-traveler">📚 Time Traveler</Link>
           <Link to="/app/farm">🚜 Farm</Link>
           <Link to="/app/finance">💰 Finance</Link>
+          <a href="https://solar-dog-fence-study.fdgfgfdg.chatgpt.site/results" target="_blank" rel="noreferrer">☀️ Solar Dog Fence Study</a>
           <Link to="/app/ideas">💡 Ideas</Link>
         </nav>
       </aside>
