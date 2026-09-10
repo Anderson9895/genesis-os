@@ -19,6 +19,7 @@ import Deliverables from './pages/Deliverables'
 import Outreach from './pages/Outreach'
 import FundraiserManager from './pages/FundraiserManager'
 import TikTokOperations from './pages/TikTokOperations'
+import SolarDogFenceStudy from './pages/SolarDogFenceStudy'
 import LoginPage from './pages/Login'
 import LandingPage from './pages/LandingPage'
 import { supabase } from './lib/supabaseClient'
@@ -61,7 +62,7 @@ function AuthenticatedApp({ user }) {
           <Link to="/app/time-traveler">📚 Time Traveler</Link>
           <Link to="/app/farm">🚜 Farm</Link>
           <Link to="/app/finance">💰 Finance</Link>
-          <a href="https://solar-dog-fence-study.fdgfgfdg.chatgpt.site/results" target="_blank" rel="noreferrer">☀️ Solar Dog Fence Study</a>
+          <Link to="/app/solar-dog-fence-study">☀️ Solar Dog Fence Study</Link>
           <Link to="/app/ideas">💡 Ideas</Link>
         </nav>
       </aside>
@@ -88,6 +89,7 @@ function AuthenticatedApp({ user }) {
             <Route path="time-traveler" element={<Placeholder title="Time Traveler" />} />
             <Route path="farm" element={<Farm />} />
             <Route path="finance" element={<Finance />} />
+            <Route path="solar-dog-fence-study" element={<SolarDogFenceStudy />} />
             <Route path="ideas" element={<Placeholder title="Ideas" />} />
             <Route path="*" element={<Navigate to="/app" replace />} />
           </Routes>
