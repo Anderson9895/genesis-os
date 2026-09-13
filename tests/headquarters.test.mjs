@@ -5,9 +5,9 @@ import { isKnownEmployee, pickEmployeeFromBrief } from '../api/_lib/workforce.js
 import { buildSystemPrompt, runEmployeeOnJob } from '../api/_lib/runEmployee.js'
 import { loadTeamContext } from '../api/_lib/teamContext.js'
 
-test('all 13 new roles have distinct identities and real runner instructions', () => {
-  assert.equal(TEAM.length, 13)
-  assert.equal(new Set(TEAM.map(a => a.id)).size, 13)
+test('all 14 roles have distinct identities and real runner instructions', () => {
+  assert.equal(TEAM.length, 14)
+  assert.equal(new Set(TEAM.map(a => a.id)).size, 14)
   for (const role of TEAM) {
     assert.ok(isKnownEmployee(role.name))
     const prompt = buildSystemPrompt(role.name, 'Test assignment', role.firstAssignment, { journal: [{body: 'Agreed shared decision'}] })
@@ -23,6 +23,7 @@ test('platform assignments route to the platform specialist', () => {
   assert.equal(pickEmployeeFromBrief('Plan Shopify products'), 'Shopify Manager')
   assert.equal(pickEmployeeFromBrief('YouTube marketing script'), 'YouTube Manager')
   assert.equal(pickEmployeeFromBrief('Customer support complaint'), 'Customer Support')
+  assert.equal(pickEmployeeFromBrief('Prepare my Kindle book for KDP'), 'Amazon KDP Publishing Manager')
 })
 
 test('runner passes shared context and reads current SDK structured tool output', async () => {

@@ -53,6 +53,7 @@ export function isKnownEmployee(name) {
 export function pickEmployeeFromBrief(brief) {
   const text = String(brief || '').toLowerCase()
   const specialistRules = [
+    [/\b(kdp|kindle|amazon book|paperback|ebook|book publishing)\b/, 'Amazon KDP Publishing Manager'],
     [/\betsy\b/, 'Etsy Manager'], [/\bshopify\b/, 'Shopify Manager'],
     [/\bebay\b/, 'eBay Manager'], [/\byoutube\b/, 'YouTube Manager'],
     [/\bcanva\b/, 'Canva Agent'], [/\b(legal|copyright|trademark|contract)\b/, 'Legal Research & Review'],

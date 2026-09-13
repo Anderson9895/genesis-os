@@ -63,6 +63,15 @@ const employeeSeedData = [
     status: 'Idle',
     mission: 'Finds opportunities, suppliers, tools, and business ideas.',
     task: 'Research next profitable product idea.'
+  },
+  {
+    id: 8,
+    name: 'Amazon KDP Publishing Manager',
+    role: 'Book Publishing',
+    icon: '📚',
+    status: 'Idle',
+    mission: 'Coordinates manuscripts, covers, listings, pricing, launches, and royalty tracking for Amazon KDP.',
+    task: 'Audit Through the Doorway of Time for Kindle and paperback launch.'
   }
 ]
 

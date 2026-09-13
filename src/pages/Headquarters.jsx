@@ -23,7 +23,7 @@ export default function Headquarters() {
   const nextJob = agentJobs.find((job) => ['assigned', 'queued'].includes(job.status))
   async function enroll() {
     setBusy(true); setNotice(''); setError('')
-    try { await callAiApi('/api/jobs?view=headquarters', { method: 'POST', body: { action: 'enroll' } }); await refresh(); setNotice('All 13 roles are enrolled. No AI runs were started.') }
+    try { await callAiApi('/api/jobs?view=headquarters', { method: 'POST', body: { action: 'enroll' } }); await refresh(); setNotice(`All ${data?.team.length || 14} roles are enrolled. No AI runs were started.`) }
     catch (err) { setError(err.message) }
     finally { setBusy(false) }
   }
@@ -57,12 +57,12 @@ export default function Headquarters() {
     {notice && <p role="status" className="hq-notice">{notice}</p>}
     {!data ? <p>Loading your headquarters…</p> : <>
       <div className="hq-stats">
-        <div><strong>{data.team.filter((item) => item.enrolled).length} / 13</strong><span>Roles enrolled</span></div>
+        <div><strong>{data.team.filter((item) => item.enrolled).length} / {data.team.length}</strong><span>Roles enrolled</span></div>
         <div><strong>{data.jobs.filter((job) => job.status === 'in_progress').length}</strong><span>Jobs in progress</span></div>
         <div><strong>{data.jobs.filter((job) => job.status === 'delivered').length}</strong><span>Delivered jobs</span></div>
         <div><strong>Setup pending</strong><span>Daily automation</span></div>
       </div>
-      <section className="hq-mode"><strong>{data.runtime.providerConfigured ? 'AI provider configured · draft work available' : 'AI provider connection needed'}</strong><p>All roles share the build charter and recent notes, job states, and deliverables when they run. Store actions and daily background runs are not connected yet. A configured provider still requires valid credits and a successful run.</p>{data.team.some((item) => !item.enrolled) && <button disabled={busy} onClick={enroll}>Enroll all 13 roles — no AI run</button>}</section>
+      <section className="hq-mode"><strong>{data.runtime.providerConfigured ? 'AI provider configured · draft work available' : 'AI provider connection needed'}</strong><p>All roles share the build charter and recent notes, job states, and deliverables when they run. Store actions and daily background runs are not connected yet. A configured provider still requires valid credits and a successful run.</p>{data.team.some((item) => !item.enrolled) && <button disabled={busy} onClick={enroll}>Enroll all {data.team.length} roles — no AI run</button>}</section>
       <div className="hq-workspace">
         <section className="hq-building" aria-label="Department offices">
           {FLOORS.map((floor, index) => <div className="hq-floor" key={floor}><div className="hq-floor-label"><span>0{index + 1}</span><h2>{floor}</h2></div><div className="hq-offices">{data.team.filter((item) => item.department === floor).map((item) => <button className={`hq-office ${selected === item.id ? 'selected' : ''}`} aria-pressed={selected === item.id} onClick={() => setSelected(item.id)} key={item.id}><strong>{item.name}</strong><span>{item.enrolled ? 'Enrolled · drafts only' : 'Not enrolled'}</span></button>)}</div></div>)}

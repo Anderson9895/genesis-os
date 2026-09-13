@@ -22,6 +22,7 @@ import TikTokOperations from './pages/TikTokOperations'
 import SolarDogFenceStudy from './pages/SolarDogFenceStudy'
 import FieldLedgerBilling from './pages/FieldLedgerBilling'
 import FieldLedgerBillingSuccess from './pages/FieldLedgerBillingSuccess'
+import AmazonKdp from './pages/AmazonKdp'
 import LoginPage from './pages/Login'
 import LandingPage from './pages/LandingPage'
 import { supabase } from './lib/supabaseClient'
@@ -59,6 +60,7 @@ function AuthenticatedApp({ user }) {
           <Link to="/app/outreach">📣 Outreach & Leads</Link>
           <Link to="/app/fundraiser-manager">💍 Fundraiser Manager</Link>
           <Link to="/app/tiktok-operations">🎬 TikTok Operations</Link>
+          <Link to="/app/amazon-kdp">📚 Amazon KDP</Link>
           <Link to="/app/holy-water">🏜 Holy Water Ranch Co.</Link>
           <Link to="/app/fields-pastures">🌾 Fields & Pastures</Link>
           <Link to="/app/time-traveler">📚 Time Traveler</Link>
@@ -86,6 +88,7 @@ function AuthenticatedApp({ user }) {
             <Route path="outreach" element={<Outreach />} />
             <Route path="fundraiser-manager" element={<FundraiserManager />} />
             <Route path="tiktok-operations" element={<TikTokOperations />} />
+            <Route path="amazon-kdp" element={<AmazonKdp />} />
             <Route path="holy-water" element={<HolyWater />} />
             <Route path="holy-water/equipment" element={<HolyWaterEquipment />} />
             <Route path="fields-pastures" element={<FieldsPastures />} />
