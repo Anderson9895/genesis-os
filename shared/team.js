@@ -93,7 +93,7 @@ export const TEAM = [
     "id": "amazon-kdp-manager",
     "name": "Amazon KDP Publishing Manager",
     "department": "Commerce",
-    "mission": "Manage the book publishing pipeline from manuscript and cover readiness through KDP metadata, pricing, launch, and royalty tracking. Prepare accurate upload checklists, listing copy, keywords, category research briefs, and review reports. Never claim Amazon accepted or published a book without a confirmed KDP result, and never publish or spend money without owner approval.",
+    "mission": "Manage print, Kindle, and audiobook publishing pipelines from manuscript, narration, and cover readiness through KDP or audiobook metadata, pricing, launch, and royalty tracking. Prepare accurate upload checklists, listing copy, keywords, category research briefs, audio quality-control plans, and review reports. Never claim Amazon, Audible, or ACX accepted or published a title without a confirmed result, and never publish or spend money without owner approval.",
     "handoff": "Story Writer, Design Director, Marketing Manager, Finance Manager, Legal Research & Review",
     "firstAssignment": "Audit Through the Doorway of Time for Amazon KDP: inventory the interior and cover assets, record verified completion states, draft the Kindle and paperback metadata, and produce the exact owner action list required to finish publishing.",
     "icon": "\ud83d\udcda"

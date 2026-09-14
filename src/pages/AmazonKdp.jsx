@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { callAiApi } from '../lib/aiApiClient'
 import './AmazonKdp.css'
+import './AmazonKdpToday.css'
 
 const STORAGE_KEY = 'genesis-os-amazon-kdp-books'
 
@@ -23,6 +24,32 @@ const starterBooks = [{
     { id: 'preview', label: 'KDP previewer checked page by page', status: 'not-started' },
     { id: 'published', label: 'Amazon review accepted and listing live', status: 'not-started' },
   ],
+}, {
+  id: 'time-travelers-testament-volume-one',
+  title: 'The Time Traveler’s Testament: Volume One',
+  subtitle: 'Where Time and Eternity Meet',
+  author: 'The Time Traveler / Holy Water Ranch Co.',
+  formats: ['Kindle eBook', 'Paperback', 'Audiobook planned'],
+  stage: 'Publishing files prepared',
+  updatedAt: '2026-09-14',
+  assets: [
+    { label: 'Kindle EPUB', filename: 'The-Time-Travelers-Testament-Volume-One-Kindle.epub' },
+    { label: 'KDP interior PDF', filename: 'The-Time-Travelers-Testament-Volume-One-KDP-Interior.pdf' },
+    { label: 'Editable interior DOCX', filename: 'The-Time-Travelers-Testament-Volume-One-KDP-Interior.docx' },
+  ],
+  checklist: [
+    { id: 'ebook-file', label: 'Kindle EPUB prepared', status: 'ready' },
+    { id: 'print-file', label: 'KDP print interior PDF prepared', status: 'ready' },
+    { id: 'editable-file', label: 'Editable DOCX source preserved', status: 'ready' },
+    { id: 'cover', label: 'Final cover package confirmed', status: 'needs-confirmation' },
+    { id: 'metadata', label: 'Amazon metadata and pricing confirmed', status: 'needs-confirmation' },
+    { id: 'kdp-upload', label: 'KDP upload and preview confirmed', status: 'not-started' },
+    { id: 'audio-source', label: 'Narrator and source recording confirmed', status: 'needs-confirmation' },
+    { id: 'audio-master', label: 'Final audiobook master files verified', status: 'not-started' },
+    { id: 'audio-package', label: 'Opening/closing credits and retail sample verified', status: 'not-started' },
+    { id: 'audio-upload', label: 'Audible/ACX submission confirmed', status: 'not-started' },
+    { id: 'published', label: 'Retail listings live and verified', status: 'not-started' },
+  ],
 }]
 
 const statusLabels = {
@@ -34,13 +61,18 @@ const statusLabels = {
 
 export default function AmazonKdp() {
   const [books, setBooks] = useState(() => {
-    try { return JSON.parse(window.localStorage.getItem(STORAGE_KEY)) || starterBooks }
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY))
+      if (!Array.isArray(saved)) return starterBooks
+      return starterBooks.map((starter) => saved.find((item) => item.id === starter.id) || starter)
+    }
     catch { return starterBooks }
   })
   const [notice, setNotice] = useState('')
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
-  const book = books[0]
+  const [selectedBookId, setSelectedBookId] = useState(books[1]?.id || books[0].id)
+  const book = books.find((item) => item.id === selectedBookId) || books[0]
 
   useEffect(() => { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(books)) }, [books])
 
@@ -69,8 +101,8 @@ export default function AmazonKdp() {
       const created = await callAiApi('/api/jobs', {
         method: 'POST',
         body: {
-          title: 'KDP launch audit — Through the Doorway of Time',
-          brief: `Audit the Amazon KDP launch for Through the Doorway of Time. Current tracker: ${JSON.stringify(book.checklist)}. Prepare metadata, keyword and category research requirements, pricing decision points, asset gaps, and a precise owner action list. Do not claim the book is published or any Amazon action occurred without verified evidence.`,
+          title: `Publishing audit — ${book.title}`,
+          brief: `Audit the print, Kindle, and audiobook launch for ${book.title}${book.subtitle ? `: ${book.subtitle}` : ''}. Current tracker: ${JSON.stringify(book.checklist)}. Known assets: ${JSON.stringify(book.assets || [])}. Prepare metadata, keyword and category research requirements, pricing decision points, print/ebook/audio asset gaps, audio QA requirements, and a precise owner action list. Do not claim Amazon, Audible, or ACX accepted or published the title without verified evidence.`,
           assigned_employee: 'Amazon KDP Publishing Manager',
         },
       })
@@ -101,16 +133,19 @@ export default function AmazonKdp() {
 
     <div className="kdp-layout">
       <section className="kdp-panel kdp-book">
+        <div className="kdp-title-tabs" aria-label="Publishing titles">{books.map((item) => <button className={item.id === book.id ? 'active' : ''} key={item.id} onClick={() => setSelectedBookId(item.id)}>{item.title}</button>)}</div>
         <div className="kdp-book-heading"><div><p className="kdp-eyebrow">CURRENT TITLE</p><h2>{book.title}</h2><p>{book.author} · {book.formats.join(' + ')}</p></div><span>{book.stage}</span></div>
+        {book.subtitle && <p className="kdp-subtitle">{book.subtitle}</p>}
+        {book.assets?.length > 0 && <div className="kdp-assets"><h3>Verified publishing files</h3>{book.assets.map((asset) => <div key={asset.filename}><span>✓ {asset.label}</span><code>{asset.filename}</code></div>)}</div>}
         <div className="kdp-progress"><span style={{ width: `${progress}%` }} /></div>
         <p className="kdp-help">Click a task to move its verified status forward. “Ready” should mean you have seen or confirmed the finished item.</p>
         <div className="kdp-checklist">{book.checklist.map((item) => <button key={item.id} onClick={() => cycleStatus(item.id)}><i className={item.status}>{item.status === 'ready' ? '✓' : '•'}</i><span>{item.label}</span><b>{statusLabels[item.status]}</b></button>)}</div>
       </section>
 
       <aside className="kdp-panel kdp-agent-card">
-        <p className="kdp-eyebrow">NEW AI EMPLOYEE</p><h2>Amazon KDP Publishing Manager</h2><p>Coordinates the Story Writer, Design Director, Marketing Manager, Finance Manager, and Legal Research & Review.</p>
-        <h3>First assignment</h3><p>Audit the book package and produce the exact remaining steps for Kindle and paperback publication.</p>
-        <h3>What it manages</h3><ul><li>Manuscript and cover readiness</li><li>KDP descriptions, keywords, and categories</li><li>Format, territory, pricing, and royalty decisions</li><li>Preview, launch, updates, and performance tracking</li></ul>
+        <p className="kdp-eyebrow">AI PUBLISHING EMPLOYEE</p><h2>Amazon KDP Publishing Manager</h2><p>Coordinates print, Kindle, and audiobook work with the Story Writer, Design Director, Marketing Manager, Finance Manager, and Legal Research & Review.</p>
+        <h3>First assignment</h3><p>Audit the selected book package and produce the exact remaining steps for print, Kindle, and audiobook publication.</p>
+        <h3>What it manages</h3><ul><li>Manuscript, ebook, print, cover, and audio readiness</li><li>KDP descriptions, keywords, and categories</li><li>Format, territory, pricing, and royalty decisions</li><li>Audio QA, preview, launch, updates, and performance tracking</li></ul>
         <p className="kdp-boundary">It prepares and tracks the work. Amazon publishing and any paid action still require your approval and a confirmed KDP result.</p>
         <Link to="/app/headquarters">Open Team Headquarters →</Link><Link to="/app/deliverables">Open Deliverables →</Link>
       </aside>

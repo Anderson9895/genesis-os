@@ -24,6 +24,7 @@ test('platform assignments route to the platform specialist', () => {
   assert.equal(pickEmployeeFromBrief('YouTube marketing script'), 'YouTube Manager')
   assert.equal(pickEmployeeFromBrief('Customer support complaint'), 'Customer Support')
   assert.equal(pickEmployeeFromBrief('Prepare my Kindle book for KDP'), 'Amazon KDP Publishing Manager')
+  assert.equal(pickEmployeeFromBrief('Prepare an Audible audiobook package'), 'Amazon KDP Publishing Manager')
 })
 
 test('runner passes shared context and reads current SDK structured tool output', async () => {
